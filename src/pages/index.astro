@@ -1,12 +1,19 @@
 ---
 import Base from '~/layouts/Base.astro';
+const user = (Astro.locals as { user?: string }).user ?? '';
 ---
 <Base title="kujaku.ai — under construction">
-  <main style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem;">
+  <main style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; gap: 48px;">
     <div style="text-align: center;">
       <div class="eyebrow is-gold">孔雀</div>
       <h1 style="font-family: var(--font-display, 'Sentient', Georgia, serif); font-style: italic; font-weight: 400; font-size: clamp(40px, 8vw, 72px); margin: 16px 0; letter-spacing: -0.02em;">kujaku.ai</h1>
       <p style="font-family: var(--font-mono, 'JetBrains Mono', ui-monospace, monospace); font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-mid, #7A736A);">under construction</p>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; font-family: var(--font-mono, 'JetBrains Mono', ui-monospace, monospace); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;">
+      <div style="color: var(--ink-mid, #7A736A);">signed in as {user}</div>
+      <form method="POST" action="/api/logout">
+        <button type="submit" style="font-family: inherit; font-size: inherit; letter-spacing: inherit; text-transform: inherit; background: transparent; border: none; color: var(--ink, #1a1a1a); cursor: pointer; text-decoration: underline; text-underline-offset: 4px; padding: 0;">sign out</button>
+      </form>
     </div>
   </main>
 </Base>
