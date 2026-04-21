@@ -1,0 +1,15 @@
+---
+import { visibleSectors } from '~/config/taxonomy';
+const list = visibleSectors();
+---
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; width: 100%; max-width: 960px; margin: 0 auto;">
+  {list.map((sector) => (
+    <a href={`/${sector.slug}`} class="card-paper" style="text-decoration: none; color: inherit; padding: 28px; display: flex; flex-direction: column; gap: 16px; transition: background 200ms ease;">
+      {sector.kanji && <div class="eyebrow is-gold" style="font-size: 18px; letter-spacing: 0.1em;">{sector.kanji}</div>}
+      <div>
+        <div style="font-family: var(--font-display, 'Sentient', Georgia, serif); font-style: italic; font-size: 28px; margin-bottom: 6px;">{sector.name}</div>
+        {sector.tagline && <div style="font-family: var(--font-mono, 'JetBrains Mono', ui-monospace, monospace); font-size: 11px; color: var(--ink-mid, #7A736A); letter-spacing: 0.08em;">{sector.tagline}</div>}
+      </div>
+    </a>
+  ))}
+</div>

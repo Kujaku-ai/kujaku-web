@@ -2,7 +2,7 @@
 import Base from '~/layouts/Base.astro';
 const failed = Astro.url.searchParams.get('e') === '1';
 ---
-<Base title="kujaku.ai — sign in">
+<Base title="kujaku.ai — sign in" hideNav={true}>
   <main style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem;">
     <form method="POST" action="/api/login" style="width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 20px;">
       <div style="text-align: center; margin-bottom: 8px;">

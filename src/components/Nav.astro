@@ -1,0 +1,20 @@
+---
+export interface Props {
+  user?: string;
+}
+const { user } = Astro.props;
+---
+<nav style="display: flex; align-items: center; justify-content: space-between; padding: 20px 32px; border-bottom: 0.5px solid var(--ink-pale, #B5AE9F);">
+  <a href="/" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit;">
+    <img src="/brand/logo-mark-red-pressed.svg" alt="kujaku" style="height: 24px;" />
+    <span style="font-family: var(--font-display, 'Sentient', Georgia, serif); font-style: italic; font-size: 20px; letter-spacing: -0.01em;">kujaku.ai</span>
+  </a>
+  {user && (
+    <div style="display: flex; align-items: center; gap: 20px; font-family: var(--font-mono, 'JetBrains Mono', ui-monospace, monospace); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;">
+      <span style="color: var(--ink-mid, #7A736A);">{user}</span>
+      <form method="POST" action="/api/logout" style="margin: 0;">
+        <button type="submit" style="font-family: inherit; font-size: inherit; letter-spacing: inherit; text-transform: inherit; background: transparent; border: none; color: var(--ink, #1a1a1a); cursor: pointer; padding: 0;">sign out</button>
+      </form>
+    </div>
+  )}
+</nav>

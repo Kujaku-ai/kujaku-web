@@ -1,0 +1,19 @@
+---
+import { assetsForSector } from '~/config/taxonomy';
+export interface Props {
+  sectorSlug: string;
+}
+const { sectorSlug } = Astro.props;
+const list = assetsForSector(sectorSlug);
+---
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; width: 100%; max-width: 960px; margin: 0 auto;">
+  {list.map((asset) => (
+    <a href={`/${asset.canonicalSector}/${asset.slug}`} class="card-paper" style="text-decoration: none; color: inherit; padding: 24px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="font-family: var(--font-mono, 'JetBrains Mono', ui-monospace, monospace); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-mid, #7A736A);">{asset.name}</div>
+      <div style="font-family: var(--font-display, 'Sentient', Georgia, serif); font-style: italic; font-size: 22px;">{asset.fullName}</div>
+      {asset.status === 'stub' && (
+        <div style="font-family: var(--font-mono, 'JetBrains Mono', ui-monospace, monospace); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-pale, #B5AE9F); margin-top: 8px;">coming soon</div>
+      )}
+    </a>
+  ))}
+</div>

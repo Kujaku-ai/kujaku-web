@@ -1,5 +1,11 @@
 ---
-const { title = 'Kujaku' } = Astro.props;
+import Nav from '~/components/Nav.astro';
+export interface Props {
+  title?: string;
+  hideNav?: boolean;
+}
+const { title = 'kujaku.ai', hideNav = false } = Astro.props;
+const user = (Astro.locals as { user?: string }).user;
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -12,7 +18,8 @@ const { title = 'Kujaku' } = Astro.props;
     <link rel="stylesheet" href="/brand/textures.css" />
     <link rel="stylesheet" href="/brand/recipes.css" />
   </head>
-  <body>
+  <body style="margin: 0; background: var(--paper, #f5f1e8); color: var(--ink, #1a1a1a);">
+    {!hideNav && <Nav user={user} />}
     <slot />
   </body>
 </html>
