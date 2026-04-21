@@ -1,0 +1,18 @@
+---
+const { title = 'Kujaku' } = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <link rel="stylesheet" href="/brand/fonts.css" />
+    <link rel="stylesheet" href="/brand/tokens.css" />
+    <link rel="stylesheet" href="/brand/textures.css" />
+    <link rel="stylesheet" href="/brand/recipes.css" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

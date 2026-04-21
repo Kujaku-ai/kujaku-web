@@ -1,0 +1,3 @@
+[submodule "vendor/kujaku-meta"]
+	path = vendor/kujaku-meta
+	url = https://github.com/Kujaku-ai/kujaku-meta.git
