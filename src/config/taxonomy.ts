@@ -70,3 +70,32 @@ export function assetsForSector(sectorSlug: string): Asset[] {
     .flatMap((s) => Object.values(assets).filter((a) => a.canonicalSector === s.slug));
   return [...canonical, ...fallbackFromDrafts];
 }
+
+export type Bot = {
+  slug: string;
+  name: string;
+  fullName: string;
+  assetSlug: string;
+  strategy: string;
+  status: 'live' | 'paper' | 'stub';
+  api?: string;
+};
+
+export const bots: Record<string, Bot> = {
+  '15min': {
+    slug: '15min',
+    name: '15-minute',
+    fullName: 'BTC 15-minute Kalshi bot',
+    assetSlug: 'btc',
+    strategy: 'kalshi15min',
+    status: 'paper',
+  },
+};
+
+export function botBySlug(slug: string): Bot | null {
+  return bots[slug] ?? null;
+}
+
+export function botsForAsset(assetSlug: string): Bot[] {
+  return Object.values(bots).filter((b) => b.assetSlug === assetSlug);
+}
