@@ -1,0 +1,32 @@
+---
+import Base from '~/layouts/Base.astro';
+import { sectorBySlug, assetsForSector } from '~/config/taxonomy';
+export interface Props { sectorSlug: string }
+const { sectorSlug } = Astro.props;
+const sector = sectorBySlug(sectorSlug);
+if (!sector) return Astro.redirect('/');
+const assetsList = assetsForSector(sectorSlug);
+---
+<Base title={`kujaku.ai — ${sector.name}`}>
+  <section class="canvas">
+    <h1 class="page-title">{sector.slug}</h1>
+    <div class="buttons">
+      {assetsList.map((asset) => (
+        <a class="btn is-route" href={`/${asset.canonicalSector}/${asset.slug}`}>{asset.slug}</a>
+      ))}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .canvas {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: calc(100vh - 48px); gap: 40px;
+  }
+  .page-title {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: var(--text-5xl, 48px); color: var(--ink);
+    margin: 0; letter-spacing: -0.02em;
+  }
+  .buttons { display: flex; flex-direction: column; gap: 16px; align-items: center; }
+</style>
