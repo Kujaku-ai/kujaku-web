@@ -1,0 +1,64 @@
+---
+// Search palette — renders the brand .search-palette family DOM.
+// State (.is-open toggle) owned by the inline <script> below.
+// Opens on `/` keypress (unless user is typing in an input elsewhere);
+// closes on Escape or click-outside. Also toggles .is-suppressed on the
+// .nav-masthead so the ticker fades + marquee pauses when palette is open.
+---
+<div class="palette" id="palette" aria-hidden="true">
+  <div class="palette-bar">
+    <span class="palette-prefix" aria-hidden="true">/</span>
+    <input class="palette-input" type="text" aria-label="Search" />
+    <kbd class="palette-hint">ESC</kbd>
+  </div>
+  <div class="palette-dropdown" role="listbox">
+    <p class="palette-empty">awaiting backend · no results yet</p>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const palette = document.getElementById('palette');
+    if (!palette) return;
+    const input = palette.querySelector('.palette-input');
+    const trigger = document.querySelector('.palette-trigger');
+    const masthead = document.querySelector('.nav-masthead');
+    if (!input || !trigger || !masthead) return;
+
+    function open() {
+      if (palette.classList.contains('is-open')) return;
+      palette.classList.add('is-open');
+      palette.setAttribute('aria-hidden', 'false');
+      masthead.classList.add('is-suppressed');
+      input.value = '';
+      input.focus();
+    }
+
+    function close() {
+      if (!palette.classList.contains('is-open')) return;
+      palette.classList.remove('is-open');
+      palette.setAttribute('aria-hidden', 'true');
+      masthead.classList.remove('is-suppressed');
+      input.value = '';
+      input.blur();
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === '/' && !palette.classList.contains('is-open')) {
+        const t = e.target;
+        const typing = t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable;
+        if (!typing) { e.preventDefault(); open(); }
+      } else if (e.key === 'Escape' && palette.classList.contains('is-open')) {
+        e.preventDefault(); close();
+      }
+    });
+
+    trigger.addEventListener('click', open);
+
+    document.addEventListener('click', function (e) {
+      if (!palette.classList.contains('is-open')) return;
+      if (palette.contains(e.target) || trigger.contains(e.target)) return;
+      close();
+    });
+  })();
+</script>
