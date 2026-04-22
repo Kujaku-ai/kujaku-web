@@ -34,6 +34,7 @@ const { user } = Astro.props;
   </aside>
   <main>
     <header class="nav-masthead is-centered-ticker">
+      <button class="nav-rail-toggle" type="button" aria-label="Toggle navigation">≡</button>
       <button class="palette-trigger" type="button" aria-label="Open search">/</button>
       <div class="ticker-viewport">
         <div class="ticker-track">
@@ -60,3 +61,52 @@ const { user } = Astro.props;
     <slot />
   </main>
 </div>
+
+<style>
+  .nav-rail-toggle {
+    display: none;
+    flex: 0 0 32px; width: 32px; height: 32px; align-self: center;
+    margin-left: 16px;
+    background: transparent; border: 1px solid var(--ink-faint); border-radius: 2px;
+    font-family: var(--font-mono); font-size: 16px; color: var(--ink-pale);
+    cursor: pointer; padding: 0;
+    transition: color 180ms var(--ease-out), border-color 180ms var(--ease-out);
+  }
+  .nav-rail-toggle:hover { color: var(--ink); border-color: var(--ink-soft); }
+  @media (max-width: 767px) {
+    .nav-rail-toggle { display: flex; align-items: center; justify-content: center; }
+    .palette-trigger { margin-left: 12px; }
+  }
+</style>
+
+<script>
+  (function () {
+    const rail = document.querySelector('.nav-rail.is-overlay');
+    const toggle = document.querySelector('.nav-rail-toggle');
+    const palette = document.getElementById('palette');
+    if (!rail || !toggle) return;
+
+    function close() { rail.classList.remove('is-drawer'); }
+
+    toggle.addEventListener('click', function (e) {
+      e.stopPropagation();
+      rail.classList.toggle('is-drawer');
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!rail.classList.contains('is-drawer')) return;
+      const t = e.target;
+      if (rail.contains(t) || toggle.contains(t)) return;
+      if (palette && palette.contains(t)) return;
+      close();
+    });
+
+    const items = rail.querySelector('.items');
+    if (items) {
+      items.addEventListener('click', function (e) {
+        const link = e.target.closest('a.nav-item');
+        if (link) close();
+      });
+    }
+  })();
+</script>

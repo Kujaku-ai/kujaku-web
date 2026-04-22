@@ -30,4 +30,7 @@ if (!sector || !asset || !bot || bot.assetSlug !== assetSlug) return Astro.redir
     color: var(--ink-pale); letter-spacing: 0.04em;
     text-align: center; margin: 32px 0;
   }
+  @media (max-width: 767px) {
+    .page-title { font-size: var(--text-3xl, 30px); }
+  }
 </style>

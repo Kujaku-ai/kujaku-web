@@ -25,4 +25,8 @@ const sectorsList = visibleSectors();
     margin: 0; letter-spacing: -0.02em;
   }
   .buttons { display: flex; flex-direction: column; gap: 16px; align-items: center; }
+  @media (max-width: 767px) {
+    .page-title { font-size: var(--text-3xl, 30px); }
+    .buttons { gap: 12px; }
+  }
 </style>
