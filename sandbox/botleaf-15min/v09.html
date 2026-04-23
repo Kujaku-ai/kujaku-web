@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>kujaku — btc · 15-min · v09 ledger</title>
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/fonts.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/tokens.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/reset.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/textures.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/recipes.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+/* v09 — Ledger.
+   Print-newspaper / trading-ledger feel. Top stat row right-
+   aligned like a stock-page index. Tabs as minimal horizontal
+   underline, also right-aligned to echo the ledger voice. Past
+   sessions rendered as .tbl.is-ledger with an explicit running
+   balance column and row-click expand. Graph sits in a tight
+   .card-paper.is-sm frame. Dense but orderly. */
+
+html,body { margin:0; padding:0; }
+body { color: var(--ink); font-family: var(--font-body); min-height: 100vh; }
+
+.faux-masthead { height: 44px; border-bottom: 1px solid var(--ink-faint);
+  display: flex; align-items: center; padding: 0 28px; background: var(--paper); }
+.faux-masthead .brand { font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); }
+.faux-masthead .brand::before { content: '/'; color: var(--ink-pale); margin-right: 8px; }
+.faux-masthead .user { margin-left: auto; font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); }
+
+.stage { padding: 28px 40px 96px; max-width: 1240px; margin: 0 auto; }
+
+.ledger-head { display: grid; grid-template-columns: 1fr auto;
+  align-items: end; gap: 36px; padding-bottom: 18px;
+  border-bottom: 2px solid var(--ink); margin-bottom: 22px; }
+.ledger-head .title-block .crumb { font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-mid);
+  margin: 0 0 8px; display: flex; gap: 10px; }
+.ledger-head .title-block .crumb .sep { color: var(--ink-faint); }
+.ledger-head h1 { font-family: var(--font-display); font-style: italic;
+  font-weight: 400; font-size: 38px; color: var(--ink); letter-spacing: -0.015em;
+  margin: 0; line-height: 1.1; }
+.ledger-head h1 small { font-family: var(--font-mono); font-style: normal;
+  font-size: 12px; color: var(--ink-mid); letter-spacing: 0.14em;
+  text-transform: uppercase; margin-left: 18px; font-variant-numeric: tabular-nums; }
+.mode-badge { display: inline-block; font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-pale);
+  padding: 3px 8px; border: 1px solid var(--ink-pale); border-radius: 2px; }
+
+/* right-aligned stat row, index-listing feel */
+.stat-index { display: grid; grid-template-columns: repeat(4, auto); gap: 40px;
+  padding: 14px 0; border-bottom: 1px solid var(--ink-faint); margin-bottom: 20px;
+  justify-content: end; font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums; }
+.stat-index .s { display: flex; align-items: baseline; gap: 10px; }
+.stat-index .s .lab { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--ink-mid); }
+.stat-index .s .num { font-size: 15px; color: var(--ink); font-weight: 500; }
+.stat-index .s .meta { font-size: 10px; color: var(--ink-mid); letter-spacing: 0.06em; }
+
+/* tabs — right-aligned minimal underline */
+.leaf-tabs { display: flex; justify-content: flex-end; gap: 36px;
+  border-bottom: 1px solid var(--ink-faint); margin-bottom: 26px; }
+.leaf-tab { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--ink-mid); padding: 12px 0 14px;
+  background: transparent; border: 0; border-bottom: 1px solid transparent;
+  margin-bottom: -1px; cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out); }
+.leaf-tab:hover { color: var(--ink); }
+.leaf-tab.is-active { color: var(--ink); border-bottom-color: var(--ink);
+  font-weight: 500; }
+
+.leaf-panel { display: none; }
+.leaf-panel.is-active { display: block; }
+
+/* overview — two-column layout for pnl + buckets */
+.overview-split { display: grid; grid-template-columns: 1.6fr 1fr; gap: 36px;
+  margin-bottom: 28px; }
+.pnl-card { padding: 20px 22px 18px; }
+.pnl-card .head { display: flex; justify-content: space-between; align-items: baseline;
+  padding-bottom: 10px; border-bottom: 1px solid var(--ink-faint); margin-bottom: 16px; }
+.pnl-card .lab { font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-mid); }
+.pnl-card .val { font-family: var(--font-mono); font-size: 13px; color: var(--ink);
+  font-weight: 500; font-variant-numeric: tabular-nums; }
+.pnl-canvas-wrap { height: 220px; position: relative; }
+
+.bucket-wrap { padding: 16px 20px; }
+.bucket-wrap .h { font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-mid);
+  margin: 0 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--ink-faint); }
+
+/* session ledger table */
+.session-section { margin-top: 10px; }
+.section-lab { font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-mid);
+  margin: 0 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--ink-faint);
+  display: flex; justify-content: space-between; align-items: baseline; }
+.section-lab b { color: var(--ink); font-weight: 500;
+  font-variant-numeric: tabular-nums; letter-spacing: 0.14em; }
+
+.tbl.is-ledger tbody tr:hover td { background: var(--paper-deep); }
+
+/* live */
+.live-grid { display: grid; grid-template-columns: 1fr 300px; gap: 32px; }
+.live-main { min-width: 0; }
+.window-strip { display: grid; grid-template-columns: auto repeat(5, 1fr);
+  gap: 20px; align-items: baseline; padding: 14px 0 16px;
+  border-top: 1px solid var(--ink-faint); border-bottom: 1px solid var(--ink-faint);
+  margin-bottom: 18px; }
+.window-strip .tk { font-family: var(--font-mono); font-size: 11px; color: var(--ink);
+  letter-spacing: 0.1em; font-weight: 500; }
+.window-strip .c .lab { display: block; font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-mid);
+  margin-bottom: 3px; }
+.window-strip .c .v { font-family: var(--font-mono); font-size: 13px; color: var(--ink);
+  font-weight: 500; font-variant-numeric: tabular-nums; }
+.live-chart-wrap { height: 320px; padding: 18px; position: relative;
+  margin-bottom: 20px; }
+.reasoning { padding: 22px 26px; }
+.reasoning .lab { font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-mid);
+  margin: 0 0 14px; }
+.reasoning p { font-family: var(--font-display); font-style: italic; font-weight: 300;
+  font-size: 19px; line-height: 1.55; color: var(--ink-soft); margin: 0;
+  max-width: 60ch; }
+
+.side-block { padding: 14px 18px; margin-bottom: 16px; }
+.side-block .h { font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-mid);
+  margin: 0 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--ink-faint); }
+
+.learning-stub { padding: 80px 24px; text-align: center; }
+.learning-stub .copy { font-family: var(--font-display); font-style: italic;
+  font-weight: 300; font-size: 17px; color: var(--ink-mid);
+  margin: 28px auto 0; max-width: 48ch; line-height: 1.55; }
+
+.sandbox-back { position: fixed; bottom: 16px; left: 20px; z-index: 40;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--ink-pale); text-decoration: none; }
+.sandbox-back:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+<header class="faux-masthead">
+  <span class="brand">btc · 15-min</span>
+  <span class="user">XBURT</span>
+</header>
+
+<main class="stage">
+  <div class="ledger-head">
+    <div class="title-block">
+      <p class="crumb">
+        <span>crypto</span><span class="sep">·</span>
+        <span>btc</span><span class="sep">·</span>
+        <span>15-min bot</span>
+      </p>
+      <h1>BTC · 15-min ledger <small>as of 15:22 mdt · 2026-04-23</small></h1>
+    </div>
+    <span class="mode-badge">paper mode</span>
+  </div>
+
+  <section class="stat-index">
+    <div class="s"><span class="lab">pf</span><span class="num">$1,300.28</span><span class="meta">c 1,281 · e 19</span></div>
+    <div class="s"><span class="lab">p&amp;l</span><span class="num">+$300.28</span><span class="meta">+30.0%</span></div>
+    <div class="s"><span class="lab">wr</span><span class="num">71%</span><span class="meta">186·76·263</span></div>
+    <div class="s"><span class="lab">last dec</span><span class="num">5m ago</span><span class="meta">15:16 mdt</span></div>
+  </section>
+
+  <nav class="leaf-tabs" role="tablist">
+    <button class="leaf-tab is-active" data-panel="overview" role="tab">Overview</button>
+    <button class="leaf-tab" data-panel="live" role="tab">Live</button>
+    <button class="leaf-tab" data-panel="learning" role="tab">Learning</button>
+  </nav>
+
+  <!-- OVERVIEW -->
+  <section class="leaf-panel is-active" data-panel="overview">
+    <div class="overview-split">
+      <div class="pnl-card card-paper is-sm">
+        <div class="head">
+          <span class="lab">lifetime p&amp;l · 200 sessions</span>
+          <span class="val">+$300.28 · +30.0%</span>
+        </div>
+        <div class="pnl-canvas-wrap"><canvas id="pnl-chart"></canvas></div>
+      </div>
+      <div class="bucket-wrap card-paper is-sm">
+        <p class="h">confidence buckets</p>
+        <table class="tbl is-dense">
+          <thead><tr>
+            <th>bucket</th><th class="num">n</th><th class="num">wins</th><th class="num">wr</th><th class="num">p&amp;l</th>
+          </tr></thead>
+          <tbody>
+            <tr><td>0.5 – 0.6</td><td class="num">11</td><td class="num">5</td><td class="num">45%</td><td class="num">−$3.79</td></tr>
+            <tr><td>0.6 – 0.7</td><td class="num">23</td><td class="num">15</td><td class="num">65%</td><td class="num">−$0.68</td></tr>
+            <tr><td>0.7 – 0.8</td><td class="num">5</td><td class="num">4</td><td class="num">80%</td><td class="num">−$0.91</td></tr>
+            <tr><td>0.8+</td><td class="num">0</td><td class="num">0</td><td class="num muted">—</td><td class="num">$0.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="session-section">
+      <p class="section-lab">past 10 windows ledger · click row to expand <b>+$7.01 net</b></p>
+      <table class="tbl is-ledger is-dense has-expandable">
+        <thead><tr>
+          <th>window close</th><th>primary</th><th class="num">contracts</th>
+          <th class="num">conf</th><th>settlement</th><th>outcome</th>
+          <th class="num">entry</th><th class="num">p&amp;l</th><th class="balance-h num">balance</th>
+        </tr></thead>
+        <tbody id="sessions-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- LIVE -->
+  <section class="leaf-panel" data-panel="live">
+    <div class="window-strip">
+      <span class="tk">KXBTC15M-26APR231130-30</span>
+      <div class="c"><span class="lab">floor</span><span class="v">$78,121</span></div>
+      <div class="c"><span class="lab">price</span><span class="v">$78,478</span></div>
+      <div class="c"><span class="lab">yes bid/ask</span><span class="v">97 / 98</span></div>
+      <div class="c"><span class="lab">no bid/ask</span><span class="v">02 / 03</span></div>
+      <div class="c"><span class="lab">t-left</span><span class="v">8m</span></div>
+    </div>
+
+    <div class="live-grid">
+      <div class="live-main">
+        <div class="live-chart-wrap card-paper"><canvas id="live-chart"></canvas></div>
+        <div class="reasoning card-paper-sunken">
+          <p class="lab">reasoning · 15:16 mdt</p>
+          <p id="reasoning-text"></p>
+        </div>
+      </div>
+      <aside>
+        <div class="side-block card-paper">
+          <p class="h">active trades</p>
+          <table class="tbl is-dense" id="active-trades-t"></table>
+        </div>
+        <div class="side-block card-paper">
+          <p class="h">decision feed</p>
+          <table class="tbl is-dense is-slash" id="decisions-t"></table>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- LEARNING -->
+  <section class="leaf-panel" data-panel="learning">
+    <div class="card-paper learning-stub">
+      <span class="hanko is-48">観</span>
+      <p class="copy">Coming soon — calibration, feature attribution, hypothesis results.</p>
+    </div>
+  </section>
+</main>
+
+<a class="sandbox-back" href="index.html">← variants</a>
+
+<script>
+const MOCK = {
+  reasoning: "Price action in the first five minutes established support near 78,300. Kalshi yes-bid has compressed from 0.48 to 0.61 as price reclaimed the floor strike. Structure favors continuation; entering YES at current ask.",
+  sessions: [
+    { close:'13:00', result:'yes', primary:'NO',  pnl:-1.60, contracts:4, conf:0.52, entry:21 },
+    { close:'13:15', result:'yes', primary:'YES', pnl:+3.80, contracts:8, conf:0.74, entry:52 },
+    { close:'13:30', result:'no',  primary:'YES', pnl:-2.30, contracts:7, conf:0.59, entry:33 },
+    { close:'13:45', result:'no',  primary:'NO',  pnl:+1.95, contracts:4, conf:0.66, entry:51 },
+    { close:'14:00', result:'no',  primary:'NO',  pnl:+2.10, contracts:5, conf:0.73, entry:58 },
+    { close:'14:15', result:'no',  primary:'NO',  pnl:+1.80, contracts:4, conf:0.68, entry:55 },
+    { close:'14:30', result:'yes', primary:'YES', pnl:+2.40, contracts:6, conf:0.71, entry:60 },
+    { close:'14:45', result:'yes', primary:'NO',  pnl:-1.50, contracts:5, conf:0.58, entry:30 },
+    { close:'15:00', result:'yes', primary:'YES', pnl:+1.20, contracts:3, conf:0.64, entry:60 },
+    { close:'15:15', result:'yes', primary:'NO',  pnl:-0.84, contracts:4, conf:0.55, entry:21 },
+  ],
+  activeTrades: [ { side:'YES', confidence:0.62, contracts:1, fill:54 } ],
+  decisions: [
+    { ts:'15:16:21', side:'YES', confidence:0.62 },
+    { ts:'15:01:12', side:'NO',  confidence:0.55 },
+    { ts:'14:46:08', side:'NO',  confidence:0.71 },
+  ],
+  liveBars: [
+    { t:'15:15', close:78392 },{ t:'15:16', close:78404 },{ t:'15:17', close:78445 },
+    { t:'15:18', close:78412 },{ t:'15:19', close:78433 },{ t:'15:20', close:78450 },
+    { t:'15:21', close:78487 },{ t:'15:22', close:78478 },
+  ],
+  liveProb: [
+    { t:'15:15', p:0.48 },{ t:'15:16', p:0.52 },{ t:'15:17', p:0.56 },
+    { t:'15:18', p:0.55 },{ t:'15:19', p:0.62 },{ t:'15:20', p:0.70 },
+    { t:'15:21', p:0.85 },{ t:'15:22', p:0.97 },
+  ],
+  tradeMarkers: [ { t:'15:16', price:78404, side:'YES', conf:0.62 } ],
+};
+const BRAND = { paper:'#F1ECE0', paperDeep:'#E8E1D1', paperCoal:'#3E362F',
+  red:'#C8331E', redDeep:'#8A2418', ink:'#1A1815', inkSoft:'#4A453E',
+  inkMid:'#7A736A', inkPale:'#B5AE9F', inkFaint:'#D8D2C2',
+  mono: "'JetBrains Mono', ui-monospace, monospace" };
+
+function generatePnLCurve(){ const N=200,T=300.28; let s=1729;
+  const r=()=>{ s=(s*9301+49297)%233280; return s/233280; };
+  const p=[]; let v=0;
+  for(let i=0;i<N;i++){ v+=(T/N)*1.05+(r()-0.48)*3.5; p.push(v); }
+  const sc=T/p[N-1]; return p.map(x=>+(x*sc).toFixed(2)); }
+
+const crosshairPlugin = { id:'brandCrosshair', afterDraw(c){ const t=c.tooltip;
+  if(!t||!t._active||!t._active.length)return;
+  const x=t._active[0].element.x,ctx=c.ctx; ctx.save();
+  ctx.beginPath(); ctx.moveTo(x,c.chartArea.top); ctx.lineTo(x,c.chartArea.bottom);
+  ctx.lineWidth=1; ctx.setLineDash([4,3]); ctx.strokeStyle=BRAND.redDeep;
+  ctx.stroke(); ctx.restore(); } };
+const endDotPlugin = { id:'brandEndDot', afterDatasetsDraw(c,a,o){
+  const idx=(o&&o.datasetIndex)??0, m=c.getDatasetMeta(idx);
+  if(!m.data.length)return; const last=m.data[m.data.length-1],ctx=c.ctx;
+  ctx.save(); ctx.beginPath(); ctx.arc(last.x,last.y,3.5,0,Math.PI*2);
+  ctx.fillStyle=BRAND.red; ctx.fill(); ctx.globalAlpha=0.5;
+  ctx.beginPath(); ctx.arc(last.x,last.y,7,0,Math.PI*2);
+  ctx.lineWidth=0.5; ctx.strokeStyle=BRAND.red; ctx.stroke(); ctx.restore(); } };
+
+function liveFrameworkPlugin(oi,ci,fy){ return { id:'liveFramework',
+  beforeDatasetsDraw(c){ const ctx=c.ctx, ya=c.scales.y, xa=c.scales.x;
+    const oX=xa.getPixelForValue(oi), cX=xa.getPixelForValue(ci), fY=ya.getPixelForValue(fy);
+    ctx.save();
+    ctx.strokeStyle=BRAND.inkFaint; ctx.lineWidth=1;
+    [oX,cX].forEach(x=>{ ctx.beginPath(); ctx.moveTo(x,c.chartArea.top);
+      ctx.lineTo(x,c.chartArea.bottom); ctx.stroke(); });
+    ctx.beginPath(); ctx.setLineDash([4,3]); ctx.strokeStyle=BRAND.inkPale; ctx.lineWidth=1;
+    ctx.moveTo(c.chartArea.left,fY); ctx.lineTo(c.chartArea.right,fY); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle=BRAND.inkMid; ctx.font=`500 10px ${BRAND.mono}`;
+    ctx.fillText('floor $78,121', c.chartArea.right-100, fY-6);
+    ctx.font=`500 9px ${BRAND.mono}`; ctx.fillStyle=BRAND.inkMid;
+    ctx.fillText('open 15:15', oX+4, c.chartArea.top+11);
+    ctx.fillText('close 15:30', cX+4, c.chartArea.top+11);
+    ctx.restore(); } }; }
+
+function initPnLChart(id){ const el=document.getElementById(id); if(!el)return;
+  const d=generatePnLCurve();
+  new Chart(el.getContext('2d'),{ type:'line',
+    data:{ labels:d.map((_,i)=>i), datasets:[{ data:d, borderColor:BRAND.ink,
+      borderWidth:1.25, pointRadius:0, pointHoverRadius:0, fill:false, tension:0 }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      animation:{ duration:900, easing:'easeOutCubic' },
+      layout:{ padding:{ right:16, top:10, bottom:6, left:6 } },
+      scales:{
+        x:{ grid:{ display:false }, border:{ color:BRAND.ink, width:1 },
+          ticks:{ color:BRAND.inkMid, font:{ family:BRAND.mono, size:9, weight:'500' },
+            maxTicksLimit:6, autoSkip:false,
+            callback(v,i,a){ if(i===0)return '200d'; if(i===a.length-1)return 'now'; return ''; } } },
+        y:{ position:'right', grid:{ color:BRAND.inkFaint, lineWidth:0.5, drawTicks:false },
+          border:{ display:false },
+          ticks:{ color:BRAND.inkMid, font:{ family:BRAND.mono, size:9, weight:'500' },
+            maxTicksLimit:4, padding:6, callback:v=>'$'+v.toFixed(0) } } },
+      plugins:{ legend:{ display:false },
+        tooltip:{ backgroundColor:BRAND.paper, borderColor:BRAND.inkFaint, borderWidth:1,
+          titleColor:BRAND.ink, bodyColor:BRAND.ink,
+          titleFont:{ family:BRAND.mono, size:10, weight:'500' },
+          bodyFont:{ family:BRAND.mono, size:10, weight:'500' },
+          padding:8, cornerRadius:2, displayColors:false,
+          callbacks:{ title:i=>'day '+i[0].label, label:c=>'$'+c.parsed.y.toFixed(2) } } },
+      interaction:{ mode:'index', intersect:false } },
+    plugins:[crosshairPlugin,endDotPlugin] }); }
+
+function initLiveChart(id){ const el=document.getElementById(id); if(!el)return;
+  const labels=[]; for(let m=14;m<=31;m++){ const hh=15+Math.floor(m/60),mm=m%60;
+    labels.push(`${hh}:${String(mm).padStart(2,'0')}`); }
+  const pa=labels.map(l=>{ const b=MOCK.liveBars.find(b=>b.t===l); return b?b.close:null; });
+  const qa=labels.map(l=>{ const b=MOCK.liveProb.find(b=>b.t===l); return b?b.p*100:null; });
+  const ma=labels.map(l=>{ const m=MOCK.tradeMarkers.find(m=>m.t===l); return m?m.price:null; });
+  new Chart(el.getContext('2d'),{ type:'line',
+    data:{ labels, datasets:[
+      { label:'price', data:pa, yAxisID:'y', borderColor:BRAND.ink, borderWidth:1.25,
+        pointRadius:0, pointHoverRadius:0, fill:false, tension:0, spanGaps:false },
+      { label:'implied p(yes)', data:qa, yAxisID:'y1', borderColor:BRAND.inkSoft,
+        borderWidth:1, borderDash:[3,2], pointRadius:0, pointHoverRadius:0,
+        fill:false, tension:0, spanGaps:false },
+      { label:'trade', data:ma, yAxisID:'y', type:'scatter', showLine:false,
+        pointRadius:4, pointBackgroundColor:BRAND.ink, pointBorderColor:BRAND.ink,
+        pointHoverRadius:6, pointHoverBorderColor:BRAND.inkSoft, pointHoverBorderWidth:1 } ] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      animation:{ duration:900, easing:'easeOutCubic' },
+      layout:{ padding:{ top:16, right:48, bottom:4, left:48 } },
+      scales:{
+        x:{ grid:{ display:false }, border:{ color:BRAND.ink, width:1 },
+          ticks:{ color:BRAND.inkMid, font:{ family:BRAND.mono, size:9, weight:'500' },
+            maxTicksLimit:10, autoSkip:false,
+            callback(v,i){ const l=labels[i]; return (l==='15:15'||l==='15:30'||l==='15:22'||l.endsWith(':20')||l.endsWith(':25'))?l:''; } } },
+        y:{ position:'left', grid:{ color:BRAND.inkFaint, lineWidth:0.5, drawTicks:false },
+          border:{ display:false },
+          ticks:{ color:BRAND.inkMid, font:{ family:BRAND.mono, size:10, weight:'500' },
+            maxTicksLimit:4, padding:6, callback:v=>'$'+Number(v).toLocaleString() } },
+        y1:{ position:'right', min:0, max:100, grid:{ display:false }, border:{ display:false },
+          ticks:{ color:BRAND.inkMid, font:{ family:BRAND.mono, size:9, weight:'500' },
+            padding:6, callback:v=>v+'%' } } },
+      plugins:{ legend:{ display:false },
+        tooltip:{ backgroundColor:BRAND.paper, borderColor:BRAND.inkFaint, borderWidth:1,
+          titleColor:BRAND.ink, bodyColor:BRAND.ink,
+          titleFont:{ family:BRAND.mono, size:10, weight:'500' },
+          bodyFont:{ family:BRAND.mono, size:10, weight:'500' },
+          padding:8, cornerRadius:2, displayColors:false,
+          callbacks:{ title:i=>i[0].label, label:(c)=>{
+            if(c.dataset.label==='price')return 'price $'+Number(c.parsed.y).toLocaleString();
+            if(c.dataset.label==='implied p(yes)')return 'p(yes) '+c.parsed.y.toFixed(0)+'%';
+            if(c.dataset.label==='trade'){ const m=MOCK.tradeMarkers[0]; return m.side+' · conf '+m.conf.toFixed(2); }
+            return ''; } } } },
+      interaction:{ mode:'index', intersect:false } },
+    plugins:[crosshairPlugin,liveFrameworkPlugin(1,16,78121)] }); }
+
+function populate() {
+  const r=document.getElementById('reasoning-text'); if(r) r.textContent=MOCK.reasoning;
+
+  const atT=document.getElementById('active-trades-t');
+  if(atT){
+    atT.innerHTML = `<thead><tr><th>side</th><th class="num">ctr</th><th class="num">fill</th><th class="num">conf</th></tr></thead>
+      <tbody>${MOCK.activeTrades.map(t=>`<tr>
+        <td class="sym">${t.side}</td><td class="num">${t.contracts}</td>
+        <td class="num">${t.fill}¢</td><td class="num">${t.confidence.toFixed(2)}</td>
+      </tr>`).join('')}</tbody>`;
+  }
+
+  const dcT=document.getElementById('decisions-t');
+  if(dcT){
+    dcT.innerHTML = `<thead><tr><th>ts</th><th>side</th><th class="num">conf</th></tr></thead>
+      <tbody>${MOCK.decisions.map(d=>`<tr>
+        <td>${d.ts}</td><td class="sym">${d.side}</td><td class="num">${d.confidence.toFixed(2)}</td>
+      </tr>`).join('')}</tbody>`;
+  }
+
+  const tb=document.getElementById('sessions-body');
+  if(tb){
+    let bal=0;
+    tb.innerHTML=MOCK.sessions.map((s,i)=>{
+      bal+=s.pnl;
+      const sign=s.pnl>=0?'+':'−'; const abs=Math.abs(s.pnl).toFixed(2);
+      const bsign=bal>=0?'+':'−'; const babs=Math.abs(bal).toFixed(2);
+      const won=s.result===s.primary.toLowerCase();
+      return `
+        <tr class="row is-expandable" data-i="${i}">
+          <td>${s.close}</td><td>${s.primary}</td>
+          <td class="num">${s.contracts}</td><td class="num">${s.conf.toFixed(2)}</td>
+          <td>${s.result}</td><td>${won?'win':'loss'}</td>
+          <td class="num">${s.entry}¢</td>
+          <td class="num">${sign}$${abs}</td>
+          <td class="balance num">${bsign}$${babs}</td>
+        </tr>
+        <tr class="row-detail" data-detail-i="${i}" style="display:none;">
+          <td colspan="9">
+            <div class="detail-grid">
+              <dt>market</dt><dd>KXBTC15M-26APR window closing ${s.close}</dd>
+              <dt>primary</dt><dd>${s.primary} · ${s.contracts} contracts @ ${s.entry}¢ · conf ${s.conf.toFixed(2)}</dd>
+              <dt>settlement</dt><dd>${s.result} (${won?'win':'loss'})</dd>
+              <dt>p&amp;l · running</dt><dd>${sign}$${abs} → ${bsign}$${babs}</dd>
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
+    tb.querySelectorAll('tr.row.is-expandable').forEach(row=>{
+      row.addEventListener('click',()=>{
+        const i=row.dataset.i;
+        const det=tb.querySelector(`tr.row-detail[data-detail-i="${i}"]`);
+        const open=row.classList.toggle('is-open');
+        det.style.display=open?'table-row':'none';
+      });
+    });
+  }
+}
+
+function initTabs(){
+  const tabs=document.querySelectorAll('.leaf-tab');
+  const panels=document.querySelectorAll('.leaf-panel');
+  let liveInit=false;
+  tabs.forEach(t=>t.addEventListener('click',()=>{
+    tabs.forEach(x=>x.classList.remove('is-active'));
+    panels.forEach(x=>x.classList.remove('is-active'));
+    t.classList.add('is-active');
+    const p=document.querySelector(`.leaf-panel[data-panel="${t.dataset.panel}"]`);
+    if(p) p.classList.add('is-active');
+    if(t.dataset.panel==='live'&&!liveInit){ initLiveChart('live-chart'); liveInit=true; }
+  }));
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  populate(); initPnLChart('pnl-chart'); initTabs();
+});
+</script>
+</body>
+</html>

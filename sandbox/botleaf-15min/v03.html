@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>kujaku — btc · 15-min · v03 side rail tabs</title>
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/fonts.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/tokens.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/reset.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/textures.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/recipes.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+/* v03 — Side Rail Tabs.
+   Unconventional tab placement: a vertical side rail (scoped to
+   the leaf content, distinct from the app's outer nav-rail) holds
+   the three tabs as stacked slash-prefix items — leaf-level nav
+   nested inside page-level nav. Past sessions rendered as a
+   horizontal tick timeline with hover-popover. Graph framed in
+   card-paper. Medium density. */
+
+html,body { margin:0; padding:0; }
+body { color: var(--ink); font-family: var(--font-body); min-height: 100vh; }
+
+.faux-masthead { height: 48px; border-bottom: 1px solid var(--ink-faint);
+  display: flex; align-items: center; padding: 0 28px; background: var(--paper); }
+.faux-masthead .brand { font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); }
+.faux-masthead .brand::before { content: '/'; color: var(--ink-pale); margin-right: 10px; }
+.faux-masthead .user { margin-left: auto; font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); }
+
+.stage { padding: 36px 48px 96px; max-width: 1240px; margin: 0 auto; }
+
+.crumb { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--ink-mid); margin: 0 0 28px 0;
+  display: flex; align-items: center; gap: 12px; }
+.crumb .sep { color: var(--ink-faint); }
+.mode-badge { display: inline-block; font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-pale);
+  padding: 4px 9px; border: 1px solid var(--ink-pale); border-radius: 2px;
+  margin-left: auto; }
+
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px;
+  padding: 22px 0; border-top: 1px solid var(--ink-faint);
+  border-bottom: 1px solid var(--ink-faint); margin-bottom: 32px; }
+.stats-row .stat .lab { display:block; font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-mid);
+  margin-bottom: 8px; }
+.stats-row .stat .num { display:block; font-family: var(--font-mono); font-size: 22px;
+  font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums;
+  letter-spacing: -0.005em; }
+.stats-row .stat .meta { display:block; font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.08em; color: var(--ink-mid);
+  font-variant-numeric: tabular-nums; margin-top: 6px; }
+
+/* side-rail tabs layout */
+.leaf-shell { display: grid; grid-template-columns: 148px 1fr; gap: 48px; align-items: start; }
+
+.leaf-tabs { display: flex; flex-direction: column; gap: 2px; padding: 8px 0;
+  border-top: 1px solid var(--ink-faint); border-bottom: 1px solid var(--ink-faint);
+  position: sticky; top: 24px; }
+.leaf-tabs .section-h { font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-pale);
+  padding: 10px 0 6px; margin: 0; }
+.leaf-tab { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--ink-mid); padding: 10px 0;
+  background: transparent; border: 0; text-align: left; cursor: pointer;
+  display: flex; align-items: center; gap: 10px;
+  transition: color var(--duration-fast) var(--ease-out); }
+.leaf-tab .slash { color: var(--ink-pale); }
+.leaf-tab:hover { color: var(--ink); }
+.leaf-tab:hover .slash { color: var(--ink); }
+.leaf-tab.is-active { color: var(--red); font-weight: 500; }
+.leaf-tab.is-active .slash { visibility: hidden; }
+.leaf-tab.is-active::before { content: '>'; color: var(--red); margin-right: -4px; }
+
+.leaf-panel { display: none; }
+.leaf-panel.is-active { display: block; }
+
+/* overview */
+.pnl-card { padding: 28px 32px 24px; margin-bottom: 32px; }
+.pnl-card .head { display: flex; justify-content: space-between; align-items: baseline;
+  padding-bottom: 12px; border-bottom: 1px solid var(--ink-faint); margin-bottom: 20px; }
+.pnl-card .title { font-family: var(--font-display); font-style: italic; font-weight: 400;
+  font-size: 22px; color: var(--ink); letter-spacing: -0.01em; margin: 0; }
+.pnl-card .meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-mid);
+  letter-spacing: 0.12em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
+.pnl-card .meta b { color: var(--ink); font-weight: 500; }
+.pnl-canvas-wrap { height: 260px; position: relative; }
+
+.section-lab { font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-mid);
+  margin: 0 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--ink-faint); }
+
+/* horizontal timeline — 10 tick-points, popover on hover */
+.timeline { position: relative; padding: 40px 20px 20px;
+  border: 1px solid var(--ink-faint); border-radius: 2px; margin-bottom: 32px; }
+.timeline .axis { position: relative; height: 2px; background: var(--ink-faint);
+  margin: 0 0 0; }
+.timeline .tick { position: absolute; top: -8px; width: 10px; height: 18px;
+  transform: translateX(-5px); cursor: pointer; }
+.timeline .tick .dot { width: 10px; height: 10px; background: var(--ink);
+  border-radius: 50%; margin-top: 0; }
+.timeline .tick:hover .dot { background: var(--red); }
+.timeline .tick .popover { display: none; position: absolute; bottom: 26px;
+  left: 50%; transform: translateX(-50%); width: 180px; background: var(--paper);
+  border: 1px solid var(--ink-faint); border-radius: 2px; padding: 12px 14px;
+  box-shadow: 0 2px 6px rgba(40,30,18,0.06), 0 12px 28px rgba(40,30,18,0.06);
+  font-family: var(--font-mono); font-size: 10px; z-index: 5;
+  font-variant-numeric: tabular-nums; text-align: left; }
+.timeline .tick:hover .popover { display: block; }
+.timeline .tick .popover .ts { color: var(--ink-mid); letter-spacing: 0.14em;
+  text-transform: uppercase; margin-bottom: 6px; }
+.timeline .tick .popover .pnl { color: var(--ink); font-size: 14px; font-weight: 500;
+  margin-bottom: 4px; }
+.timeline .tick .popover .detail { color: var(--ink-mid); letter-spacing: 0.04em; }
+.timeline .tick-lab { position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
+  font-family: var(--font-mono); font-size: 9px; color: var(--ink-mid);
+  letter-spacing: 0.08em; white-space: nowrap; }
+
+/* buckets small */
+.buckets-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+  padding: 20px 0; border-top: 1px solid var(--ink-faint);
+  border-bottom: 1px solid var(--ink-faint); }
+.buckets-grid .b .lab { display: block; font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-mid);
+  margin-bottom: 8px; }
+.buckets-grid .b .val { display: block; font-family: var(--font-mono); font-size: 18px;
+  color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
+.buckets-grid .b .sub { display: block; font-family: var(--font-mono); font-size: 10px;
+  color: var(--ink-mid); font-variant-numeric: tabular-nums; margin-top: 4px; }
+
+/* live */
+.live-grid { display: grid; grid-template-columns: 1fr 320px; gap: 28px; }
+.live-main { min-width: 0; }
+.window-card { padding: 22px 26px; margin-bottom: 20px; }
+.window-card .head { display: flex; justify-content: space-between; align-items: baseline;
+  padding-bottom: 10px; border-bottom: 1px solid var(--ink-faint); margin-bottom: 14px; }
+.window-card .ticker { font-family: var(--font-mono); font-size: 11px; color: var(--ink);
+  letter-spacing: 0.1em; font-weight: 500; }
+.window-card .t-left { font-family: var(--font-mono); font-size: 11px; color: var(--ink-mid);
+  letter-spacing: 0.14em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
+.window-card .t-left b { color: var(--ink); font-weight: 500; }
+.window-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.window-row .cell .lab { display: block; font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-mid);
+  margin-bottom: 4px; }
+.window-row .cell .v { font-family: var(--font-mono); font-size: 15px; color: var(--ink);
+  font-weight: 500; font-variant-numeric: tabular-nums; }
+.live-chart-wrap { height: 340px; padding: 20px; position: relative; margin-bottom: 20px; }
+.reasoning { padding: 24px 28px; }
+.reasoning .lab { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--ink-mid); margin: 0 0 14px; }
+.reasoning p { font-family: var(--font-display); font-style: italic; font-weight: 300;
+  font-size: 19px; line-height: 1.55; color: var(--ink-soft); margin: 0; max-width: 60ch; }
+
+.side-panel { padding: 18px 22px; margin-bottom: 16px; }
+.side-panel .h { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--ink-mid); margin: 0 0 12px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--ink-faint); }
+
+.list-row { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; padding: 8px 0;
+  font-family: var(--font-mono); font-size: 11px; font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid var(--ink-faint); }
+.list-row:last-child { border-bottom: 0; }
+.list-row .side { font-weight: 500; letter-spacing: 0.12em; color: var(--ink); }
+.list-row .meta { color: var(--ink-mid); letter-spacing: 0.06em; }
+.list-row .val { text-align: right; color: var(--ink); }
+
+/* learning */
+.learning-stub { padding: 96px 24px; text-align: center; }
+.learning-stub .copy { font-family: var(--font-display); font-style: italic;
+  font-weight: 300; font-size: 18px; color: var(--ink-mid); margin: 28px auto 0;
+  max-width: 48ch; line-height: 1.55; }
+
+.sandbox-back { position: fixed; bottom: 16px; left: 22px; z-index: 40;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--ink-pale); text-decoration: none; }
+.sandbox-back:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+<header class="faux-masthead">
+  <span class="brand">btc · 15-min</span>
+  <span class="user">XBURT</span>
+</header>
+
+<main class="stage">
+  <p class="crumb">
+    <span>crypto</span><span class="sep">·</span>
+    <span>btc</span><span class="sep">·</span>
+    <span>15-min bot</span>
+    <span class="mode-badge">paper mode</span>
+  </p>
+
+  <section class="stats-row">
+    <div class="stat">
+      <span class="lab">portfolio</span>
+      <span class="num">$1,300.28</span>
+      <span class="meta">cash $1,281.01 · exp $19.27</span>
+    </div>
+    <div class="stat">
+      <span class="lab">lifetime p&amp;l</span>
+      <span class="num">+$300.28</span>
+      <span class="meta">+30.0% since inception</span>
+    </div>
+    <div class="stat">
+      <span class="lab">win rate</span>
+      <span class="num">71%</span>
+      <span class="meta">186 won · 76 lost</span>
+    </div>
+    <div class="stat">
+      <span class="lab">last decision</span>
+      <span class="num">5m ago</span>
+      <span class="meta">15:16 · window active</span>
+    </div>
+  </section>
+
+  <div class="leaf-shell">
+    <aside class="leaf-tabs" role="tablist">
+      <p class="section-h">view</p>
+      <button class="leaf-tab is-active" data-panel="overview" role="tab">
+        <span class="slash">/</span><span>overview</span>
+      </button>
+      <button class="leaf-tab" data-panel="live" role="tab">
+        <span class="slash">/</span><span>live</span>
+      </button>
+      <button class="leaf-tab" data-panel="learning" role="tab">
+        <span class="slash">/</span><span>learning</span>
+      </button>
+    </aside>
+
+    <div>
+      <!-- OVERVIEW -->
+      <section class="leaf-panel is-active" data-panel="overview">
+        <div class="pnl-card card-paper">
+          <div class="head">
+            <h3 class="title">Lifetime P&amp;L</h3>
+            <span class="meta">+$300.28 · <b>+30.0%</b></span>
+          </div>
+          <div class="pnl-canvas-wrap"><canvas id="pnl-chart"></canvas></div>
+        </div>
+
+        <p class="section-lab">past 10 windows · hover a tick</p>
+        <div class="timeline" id="timeline">
+          <div class="axis"></div>
+        </div>
+
+        <p class="section-lab">confidence buckets</p>
+        <div class="buckets-grid">
+          <div class="b"><span class="lab">0.5 – 0.6</span><span class="val">11</span><span class="sub">5 wins · 45%</span></div>
+          <div class="b"><span class="lab">0.6 – 0.7</span><span class="val">23</span><span class="sub">15 wins · 65%</span></div>
+          <div class="b"><span class="lab">0.7 – 0.8</span><span class="val">5</span><span class="sub">4 wins · 80%</span></div>
+          <div class="b"><span class="lab">0.8+</span><span class="val">0</span><span class="sub">no trades yet</span></div>
+        </div>
+      </section>
+
+      <!-- LIVE -->
+      <section class="leaf-panel" data-panel="live">
+        <div class="live-grid">
+          <div class="live-main">
+            <div class="window-card card-paper-sunken">
+              <div class="head">
+                <span class="ticker">KXBTC15M-26APR231130-30</span>
+                <span class="t-left"><b>8m</b> left · closes 15:30</span>
+              </div>
+              <div class="window-row">
+                <div class="cell"><span class="lab">floor</span><span class="v">$78,121</span></div>
+                <div class="cell"><span class="lab">price</span><span class="v">$78,478</span></div>
+                <div class="cell"><span class="lab">yes bid/ask</span><span class="v">97 / 98</span></div>
+                <div class="cell"><span class="lab">no bid/ask</span><span class="v">02 / 03</span></div>
+              </div>
+            </div>
+            <div class="live-chart-wrap card-paper"><canvas id="live-chart"></canvas></div>
+            <div class="reasoning card-paper-sunken">
+              <p class="lab">reasoning · 15:16 mdt</p>
+              <p id="reasoning-text"></p>
+            </div>
+          </div>
+          <aside>
+            <div class="side-panel card-paper">
+              <h4 class="h">active trades</h4>
+              <div id="active-trades"></div>
+            </div>
+            <div class="side-panel card-paper">
+              <h4 class="h">decision feed</h4>
+              <div id="decisions"></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- LEARNING -->
+      <section class="leaf-panel" data-panel="learning">
+        <div class="card-paper learning-stub">
+          <span class="hanko is-48">観</span>
+          <p class="copy">Coming soon — calibration, feature attribution, hypothesis results.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<a class="sandbox-back" href="index.html">← variants</a>
+
+<script>
+const MOCK = {
+  reasoning: "Price action in the first five minutes established support near 78,300. Kalshi yes-bid has compressed from 0.48 to 0.61 as price reclaimed the floor strike. Structure favors continuation; entering YES at current ask.",
+  sessions: [
+    { close:'13:00', result:'yes', primary:'NO',  pnl:-1.60, contracts:4, conf:0.52 },
+    { close:'13:15', result:'yes', primary:'YES', pnl:+3.80, contracts:8, conf:0.74 },
+    { close:'13:30', result:'no',  primary:'YES', pnl:-2.30, contracts:7, conf:0.59 },
+    { close:'13:45', result:'no',  primary:'NO',  pnl:+1.95, contracts:4, conf:0.66 },
+    { close:'14:00', result:'no',  primary:'NO',  pnl:+2.10, contracts:5, conf:0.73 },
+    { close:'14:15', result:'no',  primary:'NO',  pnl:+1.80, contracts:4, conf:0.68 },
+    { close:'14:30', result:'yes', primary:'YES', pnl:+2.40, contracts:6, conf:0.71 },
+    { close:'14:45', result:'yes', primary:'NO',  pnl:-1.50, contracts:5, conf:0.58 },
+    { close:'15:00', result:'yes', primary:'YES', pnl:+1.20, contracts:3, conf:0.64 },
+    { close:'15:15', result:'yes', primary:'NO',  pnl:-0.84, contracts:4, conf:0.55 },
+  ],
+  activeTrades: [ { side:'YES', confidence:0.62, contracts:1, fill:54 } ],
+  decisions: [
+    { ts:'15:16:21', side:'YES', confidence:0.62 },
+    { ts:'15:01:12', side:'NO',  confidence:0.55 },
+    { ts:'14:46:08', side:'NO',  confidence:0.71 },
+  ],
+  liveBars: [
+    { t:'15:15', close:78392 },{ t:'15:16', close:78404 },{ t:'15:17', close:78445 },
+    { t:'15:18', close:78412 },{ t:'15:19', close:78433 },{ t:'15:20', close:78450 },
+    { t:'15:21', close:78487 },{ t:'15:22', close:78478 },
+  ],
+  liveProb: [
+    { t:'15:15', p:0.48 },{ t:'15:16', p:0.52 },{ t:'15:17', p:0.56 },
+    { t:'15:18', p:0.55 },{ t:'15:19', p:0.62 },{ t:'15:20', p:0.70 },
+    { t:'15:21', p:0.85 },{ t:'15:22', p:0.97 },
+  ],
+  tradeMarkers: [ { t:'15:16', price:78404, side:'YES', conf:0.62 } ],
+};
+const BRAND = { paper:'#F1ECE0', paperDeep:'#E8E1D1', paperCoal:'#3E362F',
+  red:'#C8331E', redDeep:'#8A2418', ink:'#1A1815', inkSoft:'#4A453E',
+  inkMid:'#7A736A', inkPale:'#B5AE9F', inkFaint:'#D8D2C2',
+  mono: "'JetBrains Mono', ui-monospace, monospace" };
+
+function generatePnLCurve(){ const N=200,T=300.28; let s=1729;
+  const r=()=>{ s=(s*9301+49297)%233280; return s/233280; };
+  const p=[]; let v=0;
+  for(let i=0;i<N;i++){ v+=(T/N)*1.05+(r()-0.48)*3.5; p.push(v); }
+  const sc=T/p[N-1]; return p.map(x=>+(x*sc).toFixed(2)); }
+
+const crosshairPlugin = { id:'brandCrosshair', afterDraw(c){ const t=c.tooltip;
+  if(!t||!t._active||!t._active.length)return;
+  const x=t._active[0].element.x,ctx=c.ctx; ctx.save();
+  ctx.beginPath(); ctx.moveTo(x,c.chartArea.top); ctx.lineTo(x,c.chartArea.bottom);
+  ctx.lineWidth=1; ctx.setLineDash([4,3]); ctx.strokeStyle=BRAND.redDeep;
+  ctx.stroke(); ctx.restore(); } };
+const endDotPlugin = { id:'brandEndDot', afterDatasetsDraw(c,a,o){
+  const idx=(o&&o.datasetIndex)??0, m=c.getDatasetMeta(idx);
+  if(!m.data.length)return; const last=m.data[m.data.length-1],ctx=c.ctx;
+  ctx.save(); ctx.beginPath(); ctx.arc(last.x,last.y,3.5,0,Math.PI*2);
+  ctx.fillStyle=BRAND.red; ctx.fill(); ctx.globalAlpha=0.5;
+  ctx.beginPath(); ctx.arc(last.x,last.y,7,0,Math.PI*2);
+  ctx.lineWidth=0.5; ctx.strokeStyle=BRAND.red; ctx.stroke(); ctx.restore(); } };
+
+function liveFrameworkPlugin(oi,ci,fy){ return { id:'liveFramework',
+  beforeDatasetsDraw(c){ const ctx=c.ctx, ya=c.scales.y, xa=c.scales.x;
+    const oX=xa.getPixelForValue(oi), cX=xa.getPixelForValue(ci), fY=ya.getPixelForValue(fy);
+    ctx.save();
+    ctx.strokeStyle=BRAND.inkFaint; ctx.lineWidth=1;
+    [oX,cX].forEach(x=>{ ctx.beginPath(); ctx.moveTo(x,c.chartArea.top);
+      ctx.lineTo(x,c.chartArea.bottom); ctx.stroke(); });
+    ctx.beginPath(); ctx.setLineDash([4,3]); ctx.strokeStyle=BRAND.inkPale; ctx.lineWidth=1;
+    ctx.moveTo(c.chartArea.left,fY); ctx.lineTo(c.chartArea.right,fY); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle=BRAND.inkMid; ctx.font=`500 10px ${BRAND.mono}`;
+    ctx.fillText('floor $78,121', c.chartArea.right-100, fY-6);
+    ctx.font=`500 9px ${BRAND.mono}`; ctx.fillStyle=BRAND.inkMid;
+    ctx.fillText('open 15:15', oX+4, c.chartArea.top+11);
+    ctx.fillText('close 15:30', cX+4, c.chartArea.top+11);
+    ctx.restore(); } }; }
+
+function initPnLChart(id){ const el=document.getElementById(id); if(!el)return;
+  const d=generatePnLCurve();
+  new Chart(el.getContext('2d'),{ type:'line',
+    data:{ labels:d.map((_,i)=>i), datasets:[{ data:d, borderColor:BRAND.ink,
+      borderWidth:1.25, pointRadius:0, pointHoverRadius:0, fill:false, tension:0 }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      animation:{ duration:900, easing:'easeOutCubic' },
+      layout:{ padding:{ right:20, top:14, bottom:10, left:10 } },
+      scales:{
+        x:{ grid:{ display:false }, border:{ color:BRAND.ink, width:1 },
+          ticks:{ color:BRAND.inkMid, font:{ family:BRAND.mono, size:10, weight:'500' },
+            maxTicksLimit:6, autoSkip:false,
+            callback(v,i,a){ if(i===0)return '200d ago'; if(i===a.length-1)return 'today'; return ''; } } },
+        y:{ position:'right', grid:{ color:BRAND.inkFaint, lineWidth:0.5, drawTicks:false },
+          border:{ display:false },
+          ticks:{ color:BRAND.inkMid, font:{ family:BRAND.mono, size:10, weight:'500' },
+            maxTicksLimit:4, padding:8, callback:v=>'$'+v.toFixed(0) } } },
+      plugins:{ legend:{ display:false },
+        tooltip:{ backgroundColor:BRAND.paper, borderColor:BRAND.inkFaint, borderWidth:1,
+          titleColor:BRAND.ink, bodyColor:BRAND.ink,
+          titleFont:{ family:BRAND.mono, size:10, weight:'500' },
+          bodyFont:{ family:BRAND.mono, size:10, weight:'500' },
+          padding:8, cornerRadius:2, displayColors:false,
+          callbacks:{ title:i=>'day '+i[0].label, label:c=>'$'+c.parsed.y.toFixed(2) } } },
+      interaction:{ mode:'index', intersect:false } },
+    plugins:[crosshairPlugin,endDotPlugin] }); }
+
+function initLiveChart(id,dark){ const el=document.getElementById(id); if(!el)return;
+  const axisCol=dark?'rgba(241,236,224,0.6)':BRAND.ink;
+  const gridCol=dark?'rgba(241,236,224,0.08)':BRAND.inkFaint;
+  const tickCol=dark?'rgba(241,236,224,0.7)':BRAND.inkMid;
+  const lineCol=dark?BRAND.paper:BRAND.ink;
+  const probCol=dark?'rgba(241,236,224,0.55)':BRAND.inkSoft;
+  const labels=[]; for(let m=14;m<=31;m++){ const hh=15+Math.floor(m/60),mm=m%60;
+    labels.push(`${hh}:${String(mm).padStart(2,'0')}`); }
+  const pa=labels.map(l=>{ const b=MOCK.liveBars.find(b=>b.t===l); return b?b.close:null; });
+  const qa=labels.map(l=>{ const b=MOCK.liveProb.find(b=>b.t===l); return b?b.p*100:null; });
+  const ma=labels.map(l=>{ const m=MOCK.tradeMarkers.find(m=>m.t===l); return m?m.price:null; });
+  new Chart(el.getContext('2d'),{ type:'line',
+    data:{ labels, datasets:[
+      { label:'price', data:pa, yAxisID:'y', borderColor:lineCol, borderWidth:1.25,
+        pointRadius:0, pointHoverRadius:0, fill:false, tension:0, spanGaps:false },
+      { label:'implied p(yes)', data:qa, yAxisID:'y1', borderColor:probCol,
+        borderWidth:1, borderDash:[3,2], pointRadius:0, pointHoverRadius:0,
+        fill:false, tension:0, spanGaps:false },
+      { label:'trade', data:ma, yAxisID:'y', type:'scatter', showLine:false,
+        pointRadius:4, pointBackgroundColor:lineCol, pointBorderColor:lineCol,
+        pointHoverRadius:6, pointHoverBorderColor:BRAND.inkSoft, pointHoverBorderWidth:1 } ] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      animation:{ duration:900, easing:'easeOutCubic' },
+      layout:{ padding:{ top:16, right:48, bottom:4, left:48 } },
+      scales:{
+        x:{ grid:{ display:false }, border:{ color:axisCol, width:1 },
+          ticks:{ color:tickCol, font:{ family:BRAND.mono, size:9, weight:'500' },
+            maxTicksLimit:10, autoSkip:false,
+            callback(v,i){ const l=labels[i]; return (l==='15:15'||l==='15:30'||l==='15:22'||l.endsWith(':20')||l.endsWith(':25'))?l:''; } } },
+        y:{ position:'left', grid:{ color:gridCol, lineWidth:0.5, drawTicks:false },
+          border:{ display:false },
+          ticks:{ color:tickCol, font:{ family:BRAND.mono, size:10, weight:'500' },
+            maxTicksLimit:4, padding:6, callback:v=>'$'+Number(v).toLocaleString() } },
+        y1:{ position:'right', min:0, max:100, grid:{ display:false }, border:{ display:false },
+          ticks:{ color:tickCol, font:{ family:BRAND.mono, size:9, weight:'500' },
+            padding:6, callback:v=>v+'%' } } },
+      plugins:{ legend:{ display:false },
+        tooltip:{ backgroundColor:BRAND.paper, borderColor:BRAND.inkFaint, borderWidth:1,
+          titleColor:BRAND.ink, bodyColor:BRAND.ink,
+          titleFont:{ family:BRAND.mono, size:10, weight:'500' },
+          bodyFont:{ family:BRAND.mono, size:10, weight:'500' },
+          padding:8, cornerRadius:2, displayColors:false,
+          callbacks:{ title:i=>i[0].label, label:(c)=>{
+            if(c.dataset.label==='price')return 'price $'+Number(c.parsed.y).toLocaleString();
+            if(c.dataset.label==='implied p(yes)')return 'p(yes) '+c.parsed.y.toFixed(0)+'%';
+            if(c.dataset.label==='trade'){ const m=MOCK.tradeMarkers[0]; return m.side+' · conf '+m.conf.toFixed(2); }
+            return ''; } } } },
+      interaction:{ mode:'index', intersect:false } },
+    plugins:[crosshairPlugin,liveFrameworkPlugin(1,16,78121)] }); }
+
+function populate() {
+  const r=document.getElementById('reasoning-text'); if(r) r.textContent=MOCK.reasoning;
+
+  const at=document.getElementById('active-trades');
+  if(at) at.innerHTML=MOCK.activeTrades.map(t=>`
+    <div class="list-row">
+      <span class="side">${t.side}</span>
+      <span class="meta">${t.contracts}× · fill ${t.fill}¢ · c${t.confidence.toFixed(2)}</span>
+      <span class="val">$${(t.contracts*t.fill/100).toFixed(2)}</span>
+    </div>`).join('');
+
+  const dc=document.getElementById('decisions');
+  if(dc) dc.innerHTML=MOCK.decisions.map(d=>`
+    <div class="list-row">
+      <span class="meta">${d.ts}</span>
+      <span class="side">${d.side}</span>
+      <span class="val">${d.confidence.toFixed(2)}</span>
+    </div>`).join('');
+
+  const tl=document.getElementById('timeline');
+  if(tl){
+    const N=MOCK.sessions.length;
+    MOCK.sessions.forEach((s,i)=>{
+      const pct=(i/(N-1))*100;
+      const sign=s.pnl>=0?'+':'−';
+      const won=s.result===s.primary.toLowerCase();
+      const tick=document.createElement('div');
+      tick.className='tick'; tick.style.left=`calc(${pct}% )`;
+      tick.innerHTML=`
+        <div class="dot"></div>
+        <div class="popover">
+          <div class="ts">window ${s.close}</div>
+          <div class="pnl">${sign}$${Math.abs(s.pnl).toFixed(2)}</div>
+          <div class="detail">${s.primary} · ${s.contracts}× · c${s.conf.toFixed(2)} · ${won?'win':'loss'}</div>
+        </div>
+        <div class="tick-lab">${s.close}</div>`;
+      tl.appendChild(tick);
+    });
+  }
+}
+
+function initTabs(){
+  const tabs=document.querySelectorAll('.leaf-tab');
+  const panels=document.querySelectorAll('.leaf-panel');
+  let liveInit=false;
+  tabs.forEach(t=>t.addEventListener('click',()=>{
+    tabs.forEach(x=>x.classList.remove('is-active'));
+    panels.forEach(x=>x.classList.remove('is-active'));
+    t.classList.add('is-active');
+    const p=document.querySelector(`.leaf-panel[data-panel="${t.dataset.panel}"]`);
+    if(p) p.classList.add('is-active');
+    if(t.dataset.panel==='live'&&!liveInit){ initLiveChart('live-chart',false); liveInit=true; }
+  }));
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  populate(); initPnLChart('pnl-chart'); initTabs();
+});
+</script>
+</body>
+</html>

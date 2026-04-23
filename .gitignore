@@ -4,6 +4,7 @@ dist/
 .env.*
 !.env.example
 public/brand/
-sandbox/
+sandbox/*
+!sandbox/botleaf-15min/
 .DS_Store
 .astro/

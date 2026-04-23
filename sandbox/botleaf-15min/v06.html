@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>kujaku — btc · 15-min · v06 mono terminal</title>
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/fonts.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/tokens.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/reset.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/textures.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/recipes.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+/* v06 — Dense Mono Terminal.
+   Entirely JetBrains Mono, dense, hairline-ruled — reads like
+   a terminal operator view promoted to consumer surface. Tabs
+   as [OVER] [LIVE] [LEARN] bracket-style. Reasoning panel
+   uses Satoshi body (counterpoint #2 to Sentient italic).
+   Active trades + decisions + sessions all in .tbl.is-dense
+   .is-slash vernacular. No hanko, no watermark — this variant
+   argues that restraint is the ceremony. */
+
+html,body { margin:0; padding:0; }
+body { color: var(--ink); font-family: var(--font-mono); min-height: 100vh; background: var(--paper); }
+
+.faux-masthead { height: 44px; border-bottom: 1px solid var(--ink-faint);
+  display: flex; align-items: center; padding: 0 20px; background: var(--paper); }
+.faux-masthead .brand { font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); }
+.faux-masthead .brand::before { content: '/'; color: var(--ink-pale); margin-right: 8px; }
+.faux-masthead .user { margin-left: auto; font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); }
+
+.stage { padding: 20px 20px 96px; max-width: 1280px; margin: 0 auto; }
+
+.header-bar { display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px solid var(--ink-faint); margin-bottom: 12px; }
+.crumb { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--ink-mid); margin: 0; }
+.crumb .sep { color: var(--ink-faint); margin: 0 6px; }
+.mode-badge { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--ink-pale); padding: 2px 6px;
+  border: 1px solid var(--ink-pale); border-radius: 2px; }
+
+/* four stats: indicator-row.is-sm grid */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+  border-top: 1px solid var(--ink-faint); border-bottom: 1px solid var(--ink-faint);
+  margin-bottom: 12px; }
+.stats > .s { padding: 12px 16px; border-right: 1px solid var(--ink-faint);
+  display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; gap: 12px; }
+.stats > .s:last-child { border-right: 0; }
+.stats .lab { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ink-mid); font-weight: 500; }
+.stats .num { font-size: 16px; color: var(--ink); font-weight: 500;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.005em; }
+.stats .meta { font-size: 10px; color: var(--ink-mid); letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums; text-align: right; }
+
+/* bracket tabs */
+.leaf-tabs { display: flex; gap: 14px; padding: 12px 0 14px;
+  border-bottom: 1px solid var(--ink-faint); margin-bottom: 16px; }
+.leaf-tab { background: transparent; border: 0; padding: 0; cursor: pointer;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--ink-mid);
+  transition: color var(--duration-fast) var(--ease-out); }
+.leaf-tab::before { content: '['; color: var(--ink-faint); margin-right: 6px;
+  transition: color var(--duration-fast) var(--ease-out); }
+.leaf-tab::after  { content: ']'; color: var(--ink-faint); margin-left: 6px;
+  transition: color var(--duration-fast) var(--ease-out); }
+.leaf-tab:hover { color: var(--ink); }
+.leaf-tab:hover::before, .leaf-tab:hover::after { color: var(--ink-pale); }
+.leaf-tab.is-active { color: var(--ink); font-weight: 500; }
+.leaf-tab.is-active::before, .leaf-tab.is-active::after { color: var(--ink); }
+
+.leaf-panel { display: none; }
+.leaf-panel.is-active { display: block; }
+
+/* overview */
+.row-h { display: flex; justify-content: space-between; align-items: baseline;
+  padding: 8px 0; border-bottom: 1px solid var(--ink-faint); margin-bottom: 10px; }
+.row-h .lab { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--ink-mid); font-weight: 500; }
+.row-h .val { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--ink);
+  font-weight: 500; }
+.pnl-canvas-wrap { height: 200px; position: relative; margin-bottom: 24px; }
+
+.session-table-wrap { margin-bottom: 24px; }
+.bucket-table-wrap { margin-bottom: 24px; }
+
+.live-grid { display: grid; grid-template-columns: 1fr 280px; gap: 16px;
+  align-items: start; }
+.live-main { min-width: 0; }
+
+.window-strip { display: grid; grid-template-columns: auto repeat(5, 1fr);
+  align-items: baseline; gap: 16px; padding: 10px 0;
+  border-top: 1px solid var(--ink-faint); border-bottom: 1px solid var(--ink-faint);
+  margin-bottom: 10px; }
+.window-strip .tk { font-size: 11px; letter-spacing: 0.1em; color: var(--ink);
+  font-weight: 500; }
+.window-strip .cell { display: flex; flex-direction: column; }
+.window-strip .cell .lab { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-mid); }
+.window-strip .cell .v { font-size: 12px; color: var(--ink); font-weight: 500;
+  font-variant-numeric: tabular-nums; margin-top: 2px; }
+
+.live-chart-wrap { height: 360px; padding: 0; border: 1px solid var(--ink-faint);
+  border-radius: 0; margin-bottom: 12px; position: relative; }
+
+.meta-rail { padding: 10px 0; border-top: 1px solid var(--ink-faint);
+  border-bottom: 1px solid var(--ink-faint); margin-bottom: 16px;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.meta-rail .cell { display: flex; flex-direction: column; }
+.meta-rail .cell .lab { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-mid); }
+.meta-rail .cell .v { font-size: 11px; color: var(--ink); margin-top: 3px;
+  font-variant-numeric: tabular-nums; }
+
+.reasoning { padding: 14px 18px; border: 1px solid var(--ink-faint); margin-bottom: 16px; }
+.reasoning .lab { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--ink-mid); margin: 0 0 8px; }
+.reasoning p { font-family: var(--font-body); font-weight: 400; font-size: 13px;
+  line-height: 1.7; color: var(--ink-soft); margin: 0; max-width: 62ch; }
+
+.side-block { padding: 12px 14px; border: 1px solid var(--ink-faint); margin-bottom: 12px; }
+.side-block .h { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--ink-mid); margin: 0 0 10px; padding-bottom: 6px;
+  border-bottom: 1px solid var(--ink-faint); }
+
+/* learning */
+.learning-stub { padding: 64px 20px; text-align: center; border: 1px solid var(--ink-faint); }
+.learning-stub .copy { font-size: 11px; letter-spacing: 0.14em; color: var(--ink-mid);
+  margin: 16px auto 0; max-width: 54ch; }
+
+.sandbox-back { position: fixed; bottom: 12px; left: 14px; z-index: 40;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--ink-pale); text-decoration: none; }
+.sandbox-back:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+<header class="faux-masthead">
+  <span class="brand">btc · 15-min</span>
+  <span class="user">XBURT</span>
+</header>
+
+<main class="stage">
+  <div class="header-bar">
+    <p class="crumb"><span>crypto</span><span class="sep">·</span><span>btc</span><span class="sep">·</span><span>15-min bot</span><span class="sep">·</span><span>kxbtc15m-26apr231130-30</span></p>
+    <span class="mode-badge">paper</span>
+  </div>
+
+  <section class="stats">
+    <div class="s"><span class="lab">pf</span><span class="num">$1,300.28</span><span class="meta">c 1281 · e 19</span></div>
+    <div class="s"><span class="lab">p&amp;l</span><span class="num">+$300.28</span><span class="meta">+30.0%</span></div>
+    <div class="s"><span class="lab">wr</span><span class="num">71%</span><span class="meta">186/76/263</span></div>
+    <div class="s"><span class="lab">lastdec</span><span class="num">5m ago</span><span class="meta">15:16 mdt</span></div>
+  </section>
+
+  <div class="leaf-tabs" role="tablist">
+    <button class="leaf-tab is-active" data-panel="overview" role="tab">over</button>
+    <button class="leaf-tab" data-panel="live" role="tab">live</button>
+    <button class="leaf-tab" data-panel="learning" role="tab">learn</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <section class="leaf-panel is-active" data-panel="overview">
+    <div class="row-h">
+      <span class="lab">lifetime p&amp;l · 200 sessions</span>
+      <span class="val">+$300.28 · +30.0%</span>
+    </div>
+    <div class="pnl-canvas-wrap"><canvas id="pnl-chart"></canvas></div>
+
+    <div class="row-h"><span class="lab">past 10 windows · click row to expand</span><span class="val">10 rows</span></div>
+    <div class="session-table-wrap">
+      <table class="tbl is-dense is-slash has-expandable">
+        <thead><tr>
+          <th>window</th><th>primary</th><th class="num">contracts</th><th class="num">conf</th>
+          <th>settlement</th><th>outcome</th><th class="num">p&amp;l</th>
+        </tr></thead>
+        <tbody id="sessions-body"></tbody>
+      </table>
+    </div>
+
+    <div class="row-h"><span class="lab">confidence buckets</span><span class="val">4 buckets</span></div>
+    <div class="bucket-table-wrap">
+      <table class="tbl is-dense is-slash">
+        <thead><tr>
+          <th>bucket</th><th class="num">trades</th><th class="num">wins</th>
+          <th class="num">win rate</th><th class="num">p&amp;l</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>0.5 – 0.6</td><td class="num">11</td><td class="num">5</td><td class="num">45%</td><td class="num">−$3.79</td></tr>
+          <tr><td>0.6 – 0.7</td><td class="num">23</td><td class="num">15</td><td class="num">65%</td><td class="num">−$0.68</td></tr>
+          <tr><td>0.7 – 0.8</td><td class="num">5</td><td class="num">4</td><td class="num">80%</td><td class="num">−$0.91</td></tr>
+          <tr><td>0.8+</td><td class="num">0</td><td class="num">0</td><td class="num muted">—</td><td class="num">$0.00</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- LIVE -->
+  <section class="leaf-panel" data-panel="live">
+    <div class="window-strip">
+      <span class="tk">KXBTC15M-26APR231130-30</span>
+      <div class="cell"><span class="lab">floor</span><span class="v">$78,121</span></div>
+      <div class="cell"><span class="lab">price</span><span class="v">$78,478</span></div>
+      <div class="cell"><span class="lab">yes</span><span class="v">97 / 98</span></div>
+      <div class="cell"><span class="lab">no</span><span class="v">02 / 03</span></div>
+      <div class="cell"><span class="lab">remaining</span><span class="v">8m</span></div>
+    </div>
+
+    <div class="live-grid">
+      <div class="live-main">
+        <div class="live-chart-wrap"><canvas id="live-chart"></canvas></div>
+        <div class="meta-rail">
+          <div class="cell"><span class="lab">open</span><span class="v">15:15</span></div>
+          <div class="cell"><span class="lab">close</span><span class="v">15:30</span></div>
+          <div class="cell"><span class="lab">price now</span><span class="v">$78,478</span></div>
+          <div class="cell"><span class="lab">implied p(yes)</span><span class="v">97%</span></div>
+        </div>
+        <div class="reasoning">
+          <p class="lab">reasoning · 15:16 mdt</p>
+          <p id="reasoning-text"></p>
+        </div>
+      </div>
+      <aside>
+        <div class="side-block">
+          <p class="h">active trades</p>
+          <table class="tbl is-dense" id="active-trades-t"></table>
+        </div>
+        <div class="side-block">
+          <p class="h">decision feed</p>
+          <table class="tbl is-dense is-slash" id="decisions-t"></table>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- LEARNING -->
+  <section class="leaf-panel" data-panel="learning">
+    <div class="learning-stub">
+      <span class="hanko is-48">観</span>
+      <p class="copy">coming soon · calibration · feature attribution · hypothesis results</p>
+    </div>
+  </section>
+</main>
+
+<a class="sandbox-back" href="index.html">← variants</a>
+
+<script>
+const MOCK = {
+  reasoning: "Price action in the first five minutes established support near 78,300. Kalshi yes-bid has compressed from 0.48 to 0.61 as price reclaimed the floor strike. Structure favors continuation; entering YES at current ask.",
+  sessions: [
+    { close:'15:15', result:'yes', primary:'NO',  pnl:-0.84, contracts:4, conf:0.55 },
+    { close:'15:00', result:'yes', primary:'YES', pnl:+1.20, contracts:3, conf:0.64 },
+    { close:'14:45', result:'yes', primary:'NO',  pnl:-1.50, contracts:5, conf:0.58 },
+    { close:'14:30', result:'yes', primary:'YES', pnl:+2.40, contracts:6, conf:0.71 },
+    { close:'14:15', result:'no',  primary:'NO',  pnl:+1.80, contracts:4, conf:0.68 },
+    { close:'14:00', result:'no',  primary:'NO',  pnl:+2.10, contracts:5, conf:0.73 },
+    { close:'13:45', result:'no',  primary:'NO',  pnl:+1.95, contracts:4, conf:0.66 },
+    { close:'13:30', result:'no',  primary:'YES', pnl:-2.30, contracts:7, conf:0.59 },
+    { close:'13:15', result:'yes', primary:'YES', pnl:+3.80, contracts:8, conf:0.74 },
+    { close:'13:00', result:'yes', primary:'NO',  pnl:-1.60, contracts:4, conf:0.52 },
+  ],
+  activeTrades: [ { side:'YES', confidence:0.62, contracts:1, fill:54 } ],
+  decisions: [
+    { ts:'15:16:21', side:'YES', confidence:0.62 },
+    { ts:'15:01:12', side:'NO',  confidence:0.55 },
+    { ts:'14:46:08', side:'NO',  confidence:0.71 },
+  ],
+  liveBars: [
+    { t:'15:15', close:78392 },{ t:'15:16', close:78404 },{ t:'15:17', close:78445 },
+    { t:'15:18', close:78412 },{ t:'15:19', close:78433 },{ t:'15:20', close:78450 },
+    { t:'15:21', close:78487 },{ t:'15:22', close:78478 },
+  ],
+  liveProb: [
+    { t:'15:15', p:0.48 },{ t:'15:16', p:0.52 },{ t:'15:17', p:0.56 },
+    { t:'15:18', p:0.55 },{ t:'15:19', p:0.62 },{ t:'15:20', p:0.70 },
+    { t:'15:21', p:0.85 },{ t:'15:22', p:0.97 },
+  ],
+  tradeMarkers: [ { t:'15:16', price:78404, side:'YES', conf:0.62 } ],
+};
+const BRAND = { paper:'#F1ECE0', paperDeep:'#E8E1D1', paperCoal:'#3E362F',
+  red:'#C8331E', redDeep:'#8A2418', ink:'#1A1815', inkSoft:'#4A453E',
+  inkMid:'#7A736A', inkPale:'#B5AE9F', inkFaint:'#D8D2C2',
+  mono: "'JetBrains Mono', ui-monospace, monospace" };
+
+function generatePnLCurve(){ const N=200,T=300.28; let s=1729;
+  const r=()=>{ s=(s*9301+49297)%233280; return s/233280; };
+  const p=[]; let v=0;
+  for(let i=0;i<N;i++){ v+=(T/N)*1.05+(r()-0.48)*3.5; p.push(v); }
+  const sc=T/p[N-1]; return p.map(x=>+(x*sc).toFixed(2)); }
+
+const crosshairPlugin = { id:'brandCrosshair', afterDraw(c){ const t=c.tooltip;
+  if(!t||!t._active||!t._active.length)return;
+  const x=t._active[0].element.x,ctx=c.ctx; ctx.save();
+  ctx.beginPath(); ctx.moveTo(x,c.chartArea.top); ctx.lineTo(x,c.chartArea.bottom);
+  ctx.lineWidth=1; ctx.setLineDash([4,3]); ctx.strokeStyle=BRAND.redDeep;
+  ctx.stroke(); ctx.restore(); } };
+const endDotPlugin = { id:'brandEndDot', afterDatasetsDraw(c,a,o){
+  const idx=(o&&o.datasetIndex)??0, m=c.getDatasetMeta(idx);
+  if(!m.data.length)return; const last=m.data[m.data.length-1],ctx=c.ctx;
+  ctx.save(); ctx.beginPath(); ctx.arc(last.x,last.y,3.5,0,Math.PI*2);
+  ctx.fillStyle=BRAND.red; ctx.fill(); ctx.globalAlpha=0.5;
+  ctx.beginPath(); ctx.arc(last.x,last.y,7,0,Math.PI*2);
+  ctx.lineWidth=0.5; ctx.strokeStyle=BRAND.red; ctx.stroke(); ctx.restore(); } };
+
+function liveFrameworkPlugin(oi,ci,fy){ return { id:'liveFramework',
+  beforeDatasetsDraw(c){ const ctx=c.ctx, ya=c.scales.y, xa=c.scales.x;
+    const oX=xa.getPixelForValue(oi), cX=xa.getPixelForValue(ci), fY=ya.getPixelForValue(fy);
+    ctx.save();
+    ctx.strokeStyle=BRAND.inkFaint; ctx.lineWidth=1;
+    [oX,cX].forEach(x=>{ ctx.beginPath(); ctx.moveTo(x,c.chartArea.top);
+      ctx.lineTo(x,c.chartArea.bottom); ctx.stroke(); });
+    ctx.beginPath(); ctx.setLineDash([4,3]); ctx.strokeStyle=BRAND.inkPale; ctx.lineWidth=1;
+    ctx.moveTo(c.chartArea.left,fY); ctx.lineTo(c.chartArea.right,fY); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle=BRAND.inkMid; ctx.font=`500 10px ${BRAND.mono}`;
+    ctx.fillText('floor $78,121', c.chartArea.right-100, fY-6);
+    ctx.font=`500 9px ${BRAND.mono}`; ctx.fillStyle=BRAND.inkMid;
+    ctx.fillText('open 15:15', oX+4, c.chartArea.top+11);
+    ctx.fillText('close 15:30', cX+4, c.chartArea.top+11);
+    ctx.restore(); } }; }
+
+function initPnLChart(id){ const el=document.getElementById(id); if(!el)return;
+  const d=generatePnLCurve();
+  new Chart(el.getContext('2d'),{ type:'line',
+    data:{ labels:d.map((_,i)=>i), datasets:[{ data:d, borderColor:BRAND.ink,
+      borderWidth:1.25, pointRadius:0, pointHoverRadius:0, fill:false, tension:0 }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      animation:{ duration:900, easing:'easeOutCubic' },
+      layout:{ padding:{ right:16, top:10, bottom:6, left:6 } },
+      scales:{
+        x:{ grid:{ display:false }, border:{ color:BRAND.ink, width:1 },
+          ticks:{ color:BRAND.inkMid, font:{ family:BRAND.mono, size:9, weight:'500' },
+            maxTicksLimit:6, autoSkip:false,
+            callback(v,i,a){ if(i===0)return '200d'; if(i===a.length-1)return 'now'; return ''; } } },
+        y:{ position:'right', grid:{ color:BRAND.inkFaint, lineWidth:0.5, drawTicks:false },
+          border:{ display:false },
+          ticks:{ color:BRAND.inkMid, font:{ family:BRAND.mono, size:9, weight:'500' },
+            maxTicksLimit:4, padding:6, callback:v=>'$'+v.toFixed(0) } } },
+      plugins:{ legend:{ display:false },
+        tooltip:{ backgroundColor:BRAND.paper, borderColor:BRAND.inkFaint, borderWidth:1,
+          titleColor:BRAND.ink, bodyColor:BRAND.ink,
+          titleFont:{ family:BRAND.mono, size:10, weight:'500' },
+          bodyFont:{ family:BRAND.mono, size:10, weight:'500' },
+          padding:8, cornerRadius:2, displayColors:false,
+          callbacks:{ title:i=>'day '+i[0].label, label:c=>'$'+c.parsed.y.toFixed(2) } } },
+      interaction:{ mode:'index', intersect:false } },
+    plugins:[crosshairPlugin,endDotPlugin] }); }
+
+function initLiveChart(id){ const el=document.getElementById(id); if(!el)return;
+  const labels=[]; for(let m=14;m<=31;m++){ const hh=15+Math.floor(m/60),mm=m%60;
+    labels.push(`${hh}:${String(mm).padStart(2,'0')}`); }
+  const pa=labels.map(l=>{ const b=MOCK.liveBars.find(b=>b.t===l); return b?b.close:null; });
+  const qa=labels.map(l=>{ const b=MOCK.liveProb.find(b=>b.t===l); return b?b.p*100:null; });
+  const ma=labels.map(l=>{ const m=MOCK.tradeMarkers.find(m=>m.t===l); return m?m.price:null; });
+  new Chart(el.getContext('2d'),{ type:'line',
+    data:{ labels, datasets:[
+      { label:'price', data:pa, yAxisID:'y', borderColor:BRAND.ink, borderWidth:1.25,
+        pointRadius:0, pointHoverRadius:0, fill:false, tension:0, spanGaps:false },
+      { label:'implied p(yes)', data:qa, yAxisID:'y1', borderColor:BRAND.inkSoft,
+        borderWidth:1, borderDash:[3,2], pointRadius:0, pointHoverRadius:0,
+        fill:false, tension:0, spanGaps:false },
+      { label:'trade', data:ma, yAxisID:'y', type:'scatter', showLine:false,
+        pointRadius:4, pointBackgroundColor:BRAND.ink, pointBorderColor:BRAND.ink,
+        pointHoverRadius:6, pointHoverBorderColor:BRAND.inkSoft, pointHoverBorderWidth:1 } ] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      animation:{ duration:900, easing:'easeOutCubic' },
+      layout:{ padding:{ top:16, right:48, bottom:4, left:48 } },
+      scales:{
+        x:{ grid:{ display:false }, border:{ color:BRAND.ink, width:1 },
+          ticks:{ color:BRAND.inkMid, font:{ family:BRAND.mono, size:9, weight:'500' },
+            maxTicksLimit:10, autoSkip:false,
+            callback(v,i){ const l=labels[i]; return (l==='15:15'||l==='15:30'||l==='15:22'||l.endsWith(':20')||l.endsWith(':25'))?l:''; } } },
+        y:{ position:'left', grid:{ color:BRAND.inkFaint, lineWidth:0.5, drawTicks:false },
+          border:{ display:false },
+          ticks:{ color:BRAND.inkMid, font:{ family:BRAND.mono, size:10, weight:'500' },
+            maxTicksLimit:4, padding:6, callback:v=>'$'+Number(v).toLocaleString() } },
+        y1:{ position:'right', min:0, max:100, grid:{ display:false }, border:{ display:false },
+          ticks:{ color:BRAND.inkMid, font:{ family:BRAND.mono, size:9, weight:'500' },
+            padding:6, callback:v=>v+'%' } } },
+      plugins:{ legend:{ display:false },
+        tooltip:{ backgroundColor:BRAND.paper, borderColor:BRAND.inkFaint, borderWidth:1,
+          titleColor:BRAND.ink, bodyColor:BRAND.ink,
+          titleFont:{ family:BRAND.mono, size:10, weight:'500' },
+          bodyFont:{ family:BRAND.mono, size:10, weight:'500' },
+          padding:8, cornerRadius:2, displayColors:false,
+          callbacks:{ title:i=>i[0].label, label:(c)=>{
+            if(c.dataset.label==='price')return 'price $'+Number(c.parsed.y).toLocaleString();
+            if(c.dataset.label==='implied p(yes)')return 'p(yes) '+c.parsed.y.toFixed(0)+'%';
+            if(c.dataset.label==='trade'){ const m=MOCK.tradeMarkers[0]; return m.side+' · conf '+m.conf.toFixed(2); }
+            return ''; } } } },
+      interaction:{ mode:'index', intersect:false } },
+    plugins:[crosshairPlugin,liveFrameworkPlugin(1,16,78121)] }); }
+
+function populate() {
+  const r=document.getElementById('reasoning-text'); if(r) r.textContent=MOCK.reasoning;
+
+  const atT=document.getElementById('active-trades-t');
+  if(atT){
+    atT.innerHTML = `<thead><tr><th>side</th><th class="num">ctr</th><th class="num">fill</th><th class="num">conf</th></tr></thead>
+      <tbody>${MOCK.activeTrades.map(t=>`<tr>
+        <td class="sym">${t.side}</td><td class="num">${t.contracts}</td>
+        <td class="num">${t.fill}¢</td><td class="num">${t.confidence.toFixed(2)}</td>
+      </tr>`).join('')}</tbody>`;
+  }
+
+  const dcT=document.getElementById('decisions-t');
+  if(dcT){
+    dcT.innerHTML = `<thead><tr><th>ts</th><th>side</th><th class="num">conf</th></tr></thead>
+      <tbody>${MOCK.decisions.map(d=>`<tr>
+        <td>${d.ts}</td><td class="sym">${d.side}</td><td class="num">${d.confidence.toFixed(2)}</td>
+      </tr>`).join('')}</tbody>`;
+  }
+
+  const tb=document.getElementById('sessions-body');
+  if(tb){
+    tb.innerHTML=MOCK.sessions.map((s,i)=>{
+      const sign=s.pnl>=0?'+':'−'; const abs=Math.abs(s.pnl).toFixed(2);
+      const won=s.result===s.primary.toLowerCase();
+      return `
+        <tr class="row is-expandable" data-i="${i}">
+          <td>${s.close}</td><td>${s.primary}</td>
+          <td class="num">${s.contracts}</td>
+          <td class="num">${s.conf.toFixed(2)}</td>
+          <td>${s.result}</td>
+          <td>${won?'win':'loss'}</td>
+          <td class="num">${sign}$${abs}</td>
+        </tr>
+        <tr class="row-detail" data-detail-i="${i}" style="display:none;">
+          <td colspan="7">
+            <div class="detail-grid">
+              <dt>market</dt><dd>KXBTC15M-26APR window closing ${s.close}</dd>
+              <dt>primary</dt><dd>${s.primary} · ${s.contracts}× · conf ${s.conf.toFixed(2)}</dd>
+              <dt>settlement</dt><dd>${s.result}</dd>
+              <dt>p&amp;l</dt><dd>${sign}$${abs}</dd>
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
+    tb.querySelectorAll('tr.row.is-expandable').forEach(row=>{
+      row.addEventListener('click',()=>{
+        const i=row.dataset.i;
+        const det=tb.querySelector(`tr.row-detail[data-detail-i="${i}"]`);
+        const open=row.classList.toggle('is-open');
+        det.style.display=open?'table-row':'none';
+      });
+    });
+  }
+}
+
+function initTabs(){
+  const tabs=document.querySelectorAll('.leaf-tab');
+  const panels=document.querySelectorAll('.leaf-panel');
+  let liveInit=false;
+  tabs.forEach(t=>t.addEventListener('click',()=>{
+    tabs.forEach(x=>x.classList.remove('is-active'));
+    panels.forEach(x=>x.classList.remove('is-active'));
+    t.classList.add('is-active');
+    const p=document.querySelector(`.leaf-panel[data-panel="${t.dataset.panel}"]`);
+    if(p) p.classList.add('is-active');
+    if(t.dataset.panel==='live'&&!liveInit){ initLiveChart('live-chart'); liveInit=true; }
+  }));
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  populate(); initPnLChart('pnl-chart'); initTabs();
+});
+</script>
+</body>
+</html>

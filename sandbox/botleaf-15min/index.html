@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>kujaku — botleaf-15min sandbox</title>
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/fonts.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/tokens.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/reset.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/textures.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/recipes.css" />
+<style>
+html,body { margin:0; padding:0; }
+body { color: var(--ink); font-family: var(--font-body); min-height: 100vh; }
+
+.faux-masthead { height: 48px; border-bottom: 1px solid var(--ink-faint);
+  display: flex; align-items: center; padding: 0 28px; background: var(--paper); }
+.faux-masthead .brand { font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); }
+.faux-masthead .brand::before { content: '/'; color: var(--ink-pale); margin-right: 10px; }
+
+.wrap { padding: 56px 56px 96px; max-width: 1100px; margin: 0 auto; }
+
+.crumb { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--ink-mid); margin: 0 0 24px; }
+
+h1 { font-family: var(--font-display); font-style: italic; font-weight: 300;
+  font-size: 48px; color: var(--ink); letter-spacing: -0.02em; margin: 0 0 16px;
+  line-height: 1.05; }
+.lede { font-family: var(--font-display); font-style: italic; font-weight: 300;
+  font-size: 20px; color: var(--ink-soft); line-height: 1.55; margin: 0 0 56px;
+  max-width: 64ch; }
+
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0;
+  border-top: 1px solid var(--ink-faint); }
+.v { display: block; padding: 28px 36px 32px; border-bottom: 1px solid var(--ink-faint);
+  border-right: 1px solid var(--ink-faint); text-decoration: none; color: inherit;
+  transition: background var(--duration-fast) var(--ease-out); }
+.v:nth-child(2n) { border-right: 0; }
+.v:hover { background: var(--paper-deep); }
+
+.v .row { display: flex; align-items: baseline; gap: 16px; margin-bottom: 10px; }
+.v .n { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--ink-pale); font-weight: 500;
+  font-variant-numeric: tabular-nums; min-width: 40px; }
+.v .t { font-family: var(--font-display); font-style: italic; font-weight: 400;
+  font-size: 22px; color: var(--ink); letter-spacing: -0.01em; }
+.v .tags { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--ink-mid); margin: 0 0 10px;
+  display: flex; gap: 12px; }
+.v .tags span { color: var(--ink-mid); }
+.v .thesis { font-family: var(--font-body); font-size: 13px; line-height: 1.6;
+  color: var(--ink-soft); margin: 0; }
+
+.meta-block { margin: 64px 0 0; padding: 24px 0; border-top: 1px solid var(--ink-faint);
+  display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+  font-family: var(--font-mono); font-size: 11px; color: var(--ink-mid); }
+.meta-block h3 { font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink);
+  margin: 0 0 10px; font-weight: 500; }
+.meta-block p { margin: 0 0 8px; line-height: 1.55; }
+.meta-block a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--ink-faint); }
+.meta-block a:hover { border-bottom-color: var(--ink); }
+</style>
+</head>
+<body>
+<header class="faux-masthead">
+  <span class="brand">botleaf-15min · sandbox</span>
+</header>
+
+<main class="wrap">
+  <p class="crumb">site · sandbox · botleaf-15min</p>
+  <h1>BTC · 15-min bot leaf</h1>
+  <p class="lede">Ten design variants exploring the portfolio-note shape for the BTC 15-minute Kalshi bot page. Each variant tests a different thesis on tab placement, header treatment, information density, and editorial voice. Same mock data throughout; comparison is apples-to-apples. Click any tile to open the variant.</p>
+
+  <div class="grid">
+    <a class="v" href="v01.html">
+      <div class="row"><span class="n">v01</span><span class="t">Editorial Masthead</span></div>
+      <p class="tags"><span>spacious</span><span>hairline-underline tabs</span><span>horizontal card strip</span><span>watermark 観</span></p>
+      <p class="thesis">Four numbers as an editorial hero strip anchored by a single 観 watermark. Top horizontal tabs, hairline underline for active. Past sessions as a horizontal card-chip strip; click opens an inline drawer below. Spacious and paper-only — reads as a published note.</p>
+    </a>
+    <a class="v" href="v02.html">
+      <div class="row"><span class="n">v02</span><span class="t">Dense Dashboard</span></div>
+      <p class="tags"><span>dense</span><span>segmented pill tabs</span><span>tbl.has-expandable</span><span>utilitarian</span></p>
+      <p class="thesis">Packed, dashboard-leaning. Tight four-stat strip. Top segmented-control tabs with ink fill on active. Past sessions as a vertical .tbl.has-expandable with inline trade detail on row-click. Tests whether the brand's hairline tables can carry a dense operator view without loudness.</p>
+    </a>
+    <a class="v" href="v03.html">
+      <div class="row"><span class="n">v03</span><span class="t">Side Rail Tabs</span></div>
+      <p class="tags"><span>unconventional tab placement</span><span>vertical slash rail</span><span>timeline</span></p>
+      <p class="thesis">Leaf-level side rail holds the three tabs as stacked slash-prefix items — echoing the app's nav-rail pattern at a nested scale. Past sessions as a horizontal tick timeline with hover popovers. Graph framed in card-paper. Mid density.</p>
+    </a>
+    <a class="v" href="v04.html">
+      <div class="row"><span class="n">v04</span><span class="t">Coal Canvas</span></div>
+      <p class="tags"><span>dark surface</span><span>eyebrow-pill tabs</span><span>card-coal chip strip</span></p>
+      <p class="thesis">Full-bleed paper-coal body with paper children throughout. Eyebrow-pill slash-prefix tab row (active = paper fill, ink text). Session chips as .card-coal-sunken style tiles expanding to an inline drawer. Dark-themed Chart.js for both graphs. Tests the brand's dark-surface grammar under a public-facing leaf.</p>
+    </a>
+    <a class="v" href="v05.html">
+      <div class="row"><span class="n">v05</span><span class="t">Editorial Report</span></div>
+      <p class="tags"><span>spacious</span><span>latin + JP gloss tabs</span><span>Sentient italic title</span><span>観 hanko</span><span>Satoshi body reasoning</span></p>
+      <p class="thesis">Reads as a printed portfolio note. Big italic Sentient title, 72px 観 hanko in the corner. Tabs as an eyebrow-style chain pairing Latin label with JP gloss below each. Past sessions as sparse horizontal timeline. Reasoning panel uses Satoshi body (counterpoint #1 to Sentient italic variants) — tests whether prose voice or display voice suits Claude's reasoning text better.</p>
+    </a>
+    <a class="v" href="v06.html">
+      <div class="row"><span class="n">v06</span><span class="t">Dense Mono Terminal</span></div>
+      <p class="tags"><span>dense</span><span>all-mono</span><span>bracket tabs</span><span>Satoshi body reasoning</span></p>
+      <p class="thesis">Entirely JetBrains Mono — reads like an operator terminal promoted to consumer surface. [OVER] [LIVE] [LEARN] bracket-style tabs. Tables everywhere (tbl.is-dense.is-slash). No hanko, no watermark — the argument is that restraint is the ceremony. Reasoning in Satoshi body (counterpoint #2).</p>
+    </a>
+    <a class="v" href="v07.html">
+      <div class="row"><span class="n">v07</span><span class="t">Tabs Inline with Stats</span></div>
+      <p class="tags"><span>unconventional tab placement</span><span>inline segmented</span><span>5×2 session grid</span></p>
+      <p class="thesis">Tabs sit centered inside the same horizontal band as four stats — two stats · tab group · two stats. The band is the page's horizontal anchor. Past sessions as a 5×2 grid of square chips. Tests whether collapsing the "header" and "tab bar" into one band reduces the leaf's vertical tax.</p>
+    </a>
+    <a class="v" href="v08.html">
+      <div class="row"><span class="n">v08</span><span class="t">Tableau</span></div>
+      <p class="tags"><span>spacious</span><span>2×2 hero numbers</span><span>latin + JP tabs</span><span>指標 watermark</span><span>72px hanko</span></p>
+      <p class="thesis">Maximum editorial presence: 2×2 giant number grid anchors the page; each number is a 52px mono display with a full-width eyebrow above it. A 指標 watermark ghosts the canvas. Horizontal session chip strip feeding a rich modal drawer. Tests the "flagship report" extreme — reaches for hero magnitude.</p>
+    </a>
+    <a class="v" href="v09.html">
+      <div class="row"><span class="n">v09</span><span class="t">Ledger</span></div>
+      <p class="tags"><span>dense</span><span>right-aligned tabs</span><span>tbl.is-ledger</span><span>running balance</span></p>
+      <p class="thesis">Print-newspaper / trading-ledger register. Right-aligned stat row and right-aligned tab underline echo the ledger voice. Past sessions as tbl.is-ledger with an explicit running balance column and row-click expand. Tests whether a ledger register fits a read-only paper-traded leaf, or if it reads too transactional.</p>
+    </a>
+    <a class="v" href="v10.html">
+      <div class="row"><span class="n">v10</span><span class="t">Split Canvas</span></div>
+      <p class="tags"><span>two-column</span><span>slash-pill tabs</span><span>narrative left / visual right</span><span>観 hanko corner</span></p>
+      <p class="thesis">Two-column canvas: left column carries the quiet narrative (reasoning, decisions, vertical sessions list); right column carries the active visual (active window, charts, trades). Single 観 hanko in the reasoning corner claims the page's ceremony allowance. Tests whether narrative and visual as parallel columns reads as better balance than stacked sections.</p>
+    </a>
+  </div>
+
+  <section class="meta-block">
+    <div>
+      <h3>Mock data</h3>
+      <p>Identical across all 10 variants. Numbers drawn from a live snapshot of the paper portfolio taken 2026-04-23 at 15:22 MDT, extended with ten plausible past windows. Comparison is apples-to-apples; differences you see are design, not data.</p>
+    </div>
+    <div>
+      <h3>New patterns invented</h3>
+      <p>Per the updated brand authority rule, primitives not in brand/recipes.css (tabs, horizontal session strip, timeline, 2×2 tableau) were invented scene-local per variant using only brand tokens. Each invention is catalogued in <a href="NEW_PATTERNS.md">NEW_PATTERNS.md</a> for later promotion review.</p>
+    </div>
+  </section>
+</main>
+</body>
+</html>

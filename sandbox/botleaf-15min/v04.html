@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>kujaku — btc · 15-min · v04 coal canvas</title>
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/fonts.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/tokens.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/reset.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/textures.css" />
+<link rel="stylesheet" href="../../vendor/kujaku-meta/brand/dist/recipes.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+/* v04 — Coal Canvas.
+   The leaf content sits on a full-bleed .card-coal surface with the
+   paper ribbon masthead above. All children use .is-dark variants.
+   Eyebrow-pill row with slash vernacular for tabs. Horizontal
+   .card-coal-sunken chip row for past sessions → drawer expands
+   inline below. Dark-themed Chart.js for both graphs. */
+
+html,body { margin:0; padding:0; }
+body { color: var(--ink); font-family: var(--font-body); min-height: 100vh; }
+
+.faux-masthead { height: 48px; border-bottom: 1px solid var(--ink-faint);
+  display: flex; align-items: center; padding: 0 28px; background: var(--paper); }
+.faux-masthead .brand { font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); }
+.faux-masthead .brand::before { content: '/'; color: var(--ink-pale); margin-right: 10px; }
+.faux-masthead .user { margin-left: auto; font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); }
+
+/* coal stage */
+.stage { background: var(--paper-coal); min-height: calc(100vh - 48px);
+  padding: 56px 56px 120px; color: var(--paper); }
+.stage .inner { max-width: 1200px; margin: 0 auto; }
+
+.crumb { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: rgba(241,236,224,0.55); margin: 0 0 36px;
+  display: flex; align-items: center; gap: 14px; }
+.crumb .sep { color: rgba(241,236,224,0.3); }
+.mode-badge { display: inline-block; font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 0.22em; text-transform: uppercase; color: rgba(241,236,224,0.6);
+  padding: 4px 9px; border: 1px solid rgba(241,236,224,0.3); border-radius: 2px;
+  margin-left: auto; }
+
+/* stats — indicator-row.is-dark pattern, custom layout */
+.stats-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 48px;
+  padding: 28px 0 36px; border-top: 1px solid rgba(241,236,224,0.18);
+  border-bottom: 1px solid rgba(241,236,224,0.18); margin-bottom: 40px; }
+.stats-strip .stat .lab { display: block; font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: rgba(241,236,224,0.55);
+  margin-bottom: 12px; }
+.stats-strip .stat .num { display: block; font-family: var(--font-mono); font-size: 28px;
+  font-weight: 500; color: var(--paper); font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em; }
+.stats-strip .stat .meta { display: block; font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.06em; color: rgba(241,236,224,0.6); margin-top: 8px;
+  font-variant-numeric: tabular-nums; }
+
+/* eyebrow-pill tabs on coal */
+.leaf-tabs { display: inline-flex; gap: 0; padding: 4px; border: 1px solid rgba(241,236,224,0.2);
+  border-radius: 2px; margin-bottom: 32px; }
+.leaf-tab { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: rgba(241,236,224,0.6); padding: 8px 18px;
+  background: transparent; border: 0; cursor: pointer; display: flex; align-items: center;
+  gap: 6px; transition: color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out); }
+.leaf-tab .slash { color: rgba(241,236,224,0.4); }
+.leaf-tab:hover { color: var(--paper); }
+.leaf-tab:hover .slash { color: var(--paper); }
+.leaf-tab.is-active { background: var(--paper); color: var(--ink); font-weight: 500; }
+.leaf-tab.is-active .slash { color: var(--ink-pale); }
+
+.leaf-panel { display: none; }
+.leaf-panel.is-active { display: block; }
+
+/* pnl */
+.pnl-head { display: flex; justify-content: space-between; align-items: baseline;
+  padding-bottom: 12px; border-bottom: 1px solid rgba(241,236,224,0.18); margin-bottom: 22px; }
+.pnl-title { font-family: var(--font-display); font-style: italic; font-weight: 300;
+  font-size: 24px; color: var(--paper); letter-spacing: -0.01em; margin: 0; }
+.pnl-title .jp { font-family: var(--font-jp); font-size: 14px;
+  color: rgba(241,236,224,0.6); margin-left: 14px; font-style: normal; letter-spacing: 0.05em; }
+.pnl-meta { font-family: var(--font-mono); font-size: 11px;
+  color: rgba(241,236,224,0.7); letter-spacing: 0.14em; text-transform: uppercase;
+  font-variant-numeric: tabular-nums; }
+.pnl-meta b { color: var(--paper); font-weight: 500; }
+.pnl-canvas-wrap { height: 280px; position: relative; margin-bottom: 44px; }
+
+.section-lab { font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: rgba(241,236,224,0.6);
+  margin: 0 0 14px; padding-bottom: 8px;
+  border-bottom: 1px solid rgba(241,236,224,0.18); }
+
+/* session chip row → drawer */
+.session-strip { display: grid; grid-template-columns: repeat(10, 1fr); gap: 10px;
+  margin-bottom: 12px; }
+.session-chip { padding: 14px 10px 16px; cursor: pointer; background: #2E2824;
+  border: 0; border-radius: 2px; font-family: var(--font-mono);
+  color: var(--paper); text-align: left; box-shadow: inset 0 2px 4px rgba(0,0,0,0.18);
+  transition: background var(--duration-fast) var(--ease-out); }
+.session-chip:hover { background: rgba(241,236,224,0.05); }
+.session-chip.is-open { background: var(--paper); color: var(--ink); }
+.session-chip .ts { display: block; font-size: 9px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: inherit; opacity: 0.7; margin-bottom: 6px; }
+.session-chip .pnl { display: block; font-size: 13px; font-weight: 500;
+  font-variant-numeric: tabular-nums; margin-bottom: 2px; color: inherit; }
+.session-chip .result { display: block; font-size: 8px; letter-spacing: 0.14em;
+  text-transform: uppercase; opacity: 0.6; color: inherit; }
+
+.session-drawer { display: none; padding: 24px 28px; background: rgba(241,236,224,0.04);
+  border: 1px solid rgba(241,236,224,0.12); border-radius: 2px;
+  margin-bottom: 44px; }
+.session-drawer.is-open { display: block; }
+.session-drawer .title { font-family: var(--font-display); font-style: italic; font-weight: 300;
+  font-size: 18px; color: var(--paper); margin: 0 0 14px; }
+.session-drawer dl { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 10px 22px;
+  margin: 0; font-family: var(--font-mono); font-size: 11px;
+  font-variant-numeric: tabular-nums; }
+.session-drawer dt { color: rgba(241,236,224,0.55); letter-spacing: 0.14em;
+  text-transform: uppercase; font-size: 10px; }
+.session-drawer dd { color: var(--paper); margin: 0; }
+
+.buckets { display: grid; grid-template-columns: 1fr auto auto auto auto; gap: 0;
+  border-top: 1px solid rgba(241,236,224,0.18); margin-top: 24px; }
+.buckets > div { padding: 12px 18px; border-bottom: 1px solid rgba(241,236,224,0.12);
+  font-family: var(--font-mono); font-size: 11px; font-variant-numeric: tabular-nums;
+  color: var(--paper); }
+.buckets .h { color: rgba(241,236,224,0.55); letter-spacing: 0.14em;
+  text-transform: uppercase; font-size: 10px; }
+.buckets .num { text-align: right; }
+
+/* live */
+.live-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 40px; }
+.live-main { min-width: 0; }
+.window-card { background: rgba(241,236,224,0.04); border: 1px solid rgba(241,236,224,0.12);
+  border-radius: 2px; padding: 22px 26px; margin-bottom: 28px; }
+.window-card .title-row { display: flex; justify-content: space-between;
+  align-items: baseline; padding-bottom: 12px;
+  border-bottom: 1px solid rgba(241,236,224,0.18); margin-bottom: 18px; }
+.window-card .ticker { font-family: var(--font-mono); font-size: 11px;
+  color: var(--paper); letter-spacing: 0.1em; font-weight: 500; }
+.window-card .t-left { font-family: var(--font-mono); font-size: 11px;
+  color: rgba(241,236,224,0.6); letter-spacing: 0.14em; text-transform: uppercase;
+  font-variant-numeric: tabular-nums; }
+.window-card .t-left b { color: var(--paper); font-weight: 500; }
+.window-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+.window-row .cell .lab { display: block; font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 0.16em; text-transform: uppercase; color: rgba(241,236,224,0.55);
+  margin-bottom: 4px; }
+.window-row .cell .v { font-family: var(--font-mono); font-size: 15px;
+  color: var(--paper); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.live-chart-wrap { height: 320px; position: relative; padding: 20px;
+  background: rgba(0,0,0,0.10); border-radius: 2px; margin-bottom: 28px; }
+
+.reasoning { padding: 28px 32px; background: rgba(0,0,0,0.16);
+  border-left: 2px solid var(--red); border-radius: 2px; }
+.reasoning .lab { font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: rgba(241,236,224,0.6);
+  margin: 0 0 14px; }
+.reasoning p { font-family: var(--font-display); font-style: italic; font-weight: 300;
+  font-size: 20px; line-height: 1.5; color: rgba(241,236,224,0.9); margin: 0;
+  max-width: 60ch; }
+
+.side-block { padding: 20px 24px; background: rgba(241,236,224,0.04);
+  border: 1px solid rgba(241,236,224,0.12); border-radius: 2px; margin-bottom: 20px; }
+.side-block .h { font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: rgba(241,236,224,0.6);
+  margin: 0 0 14px; padding-bottom: 8px;
+  border-bottom: 1px solid rgba(241,236,224,0.18); }
+
+.side-row { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; padding: 8px 0;
+  font-family: var(--font-mono); font-size: 11px; font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid rgba(241,236,224,0.12); color: var(--paper); }
+.side-row:last-child { border-bottom: 0; }
+.side-row .meta { color: rgba(241,236,224,0.6); letter-spacing: 0.08em; }
+.side-row .side { font-weight: 500; letter-spacing: 0.14em; }
+.side-row .val { text-align: right; }
+
+/* learning */
+.learning-stub { padding: 96px 24px; text-align: center; }
+.learning-stub .copy { font-family: var(--font-display); font-style: italic;
+  font-weight: 300; font-size: 18px; color: rgba(241,236,224,0.7);
+  margin: 28px auto 0; max-width: 48ch; line-height: 1.55; }
+
+.sandbox-back { position: fixed; bottom: 16px; left: 22px; z-index: 40;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: rgba(241,236,224,0.5); text-decoration: none; }
+.sandbox-back:hover { color: var(--paper); }
+</style>
+</head>
+<body>
+<header class="faux-masthead">
+  <span class="brand">btc · 15-min</span>
+  <span class="user">XBURT</span>
+</header>
+
+<main class="stage">
+  <div class="inner">
+    <p class="crumb">
+      <span>crypto</span><span class="sep">·</span>
+      <span>btc</span><span class="sep">·</span>
+      <span>15-min bot</span>
+      <span class="mode-badge">paper mode</span>
+    </p>
+
+    <section class="stats-strip">
+      <div class="stat">
+        <span class="lab">portfolio</span>
+        <span class="num">$1,300.28</span>
+        <span class="meta">cash $1,281.01 · exp $19.27</span>
+      </div>
+      <div class="stat">
+        <span class="lab">lifetime p&amp;l</span>
+        <span class="num">+$300.28</span>
+        <span class="meta">+30.0% since inception</span>
+      </div>
+      <div class="stat">
+        <span class="lab">win rate</span>
+        <span class="num">71%</span>
+        <span class="meta">186 won · 76 lost</span>
+      </div>
+      <div class="stat">
+        <span class="lab">last decision</span>
+        <span class="num">5m ago</span>
+        <span class="meta">15:16 · window active</span>
+      </div>
+    </section>
+
+    <div class="leaf-tabs" role="tablist">
+      <button class="leaf-tab is-active" data-panel="overview" role="tab"><span class="slash">/</span>overview</button>
+      <button class="leaf-tab" data-panel="live" role="tab"><span class="slash">/</span>live</button>
+      <button class="leaf-tab" data-panel="learning" role="tab"><span class="slash">/</span>learning</button>
+    </div>
+
+    <!-- OVERVIEW -->
+    <section class="leaf-panel is-active" data-panel="overview">
+      <div class="pnl-head">
+        <h3 class="pnl-title">Lifetime P&amp;L<span class="jp">図表 · zuhyō</span></h3>
+        <span class="pnl-meta">+$300.28 · <b>+30.0%</b></span>
+      </div>
+      <div class="pnl-canvas-wrap"><canvas id="pnl-chart"></canvas></div>
+
+      <p class="section-lab">past 10 windows</p>
+      <div class="session-strip" id="session-strip"></div>
+      <div class="session-drawer" id="session-drawer" aria-hidden="true"></div>
+
+      <p class="section-lab">confidence buckets</p>
+      <div class="buckets">
+        <div class="h">bucket</div><div class="h num">trades</div>
+        <div class="h num">wins</div><div class="h num">win rate</div><div class="h num">p&amp;l</div>
+        <div>0.5 – 0.6</div><div class="num">11</div><div class="num">5</div><div class="num">45%</div><div class="num">−$3.79</div>
+        <div>0.6 – 0.7</div><div class="num">23</div><div class="num">15</div><div class="num">65%</div><div class="num">−$0.68</div>
+        <div>0.7 – 0.8</div><div class="num">5</div><div class="num">4</div><div class="num">80%</div><div class="num">−$0.91</div>
+        <div>0.8+</div><div class="num">0</div><div class="num">0</div><div class="num">—</div><div class="num">$0.00</div>
+      </div>
+    </section>
+
+    <!-- LIVE -->
+    <section class="leaf-panel" data-panel="live">
+      <div class="live-grid">
+        <div class="live-main">
+          <div class="window-card">
+            <div class="title-row">
+              <span class="ticker">KXBTC15M-26APR231130-30</span>
+              <span class="t-left"><b>8m</b> left · closes 15:30</span>
+            </div>
+            <div class="window-row">
+              <div class="cell"><span class="lab">floor</span><span class="v">$78,121</span></div>
+              <div class="cell"><span class="lab">price</span><span class="v">$78,478</span></div>
+              <div class="cell"><span class="lab">yes bid/ask</span><span class="v">97 / 98</span></div>
+              <div class="cell"><span class="lab">no bid/ask</span><span class="v">02 / 03</span></div>
+            </div>
+          </div>
+          <div class="live-chart-wrap"><canvas id="live-chart"></canvas></div>
+          <div class="reasoning">
+            <p class="lab">reasoning · 15:16 mdt</p>
+            <p id="reasoning-text"></p>
+          </div>
+        </div>
+        <aside>
+          <div class="side-block">
+            <h4 class="h">active trades</h4>
+            <div id="active-trades"></div>
+          </div>
+          <div class="side-block">
+            <h4 class="h">decision feed</h4>
+            <div id="decisions"></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- LEARNING -->
+    <section class="leaf-panel" data-panel="learning">
+      <div class="learning-stub">
+        <span class="hanko is-48">観</span>
+        <p class="copy">Coming soon — calibration, feature attribution, hypothesis results.</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<a class="sandbox-back" href="index.html">← variants</a>
+
+<script>
+const MOCK = {
+  reasoning: "Price action in the first five minutes established support near 78,300. Kalshi yes-bid has compressed from 0.48 to 0.61 as price reclaimed the floor strike. Structure favors continuation; entering YES at current ask.",
+  sessions: [
+    { close:'13:00', result:'yes', primary:'NO',  pnl:-1.60, contracts:4, conf:0.52 },
+    { close:'13:15', result:'yes', primary:'YES', pnl:+3.80, contracts:8, conf:0.74 },
+    { close:'13:30', result:'no',  primary:'YES', pnl:-2.30, contracts:7, conf:0.59 },
+    { close:'13:45', result:'no',  primary:'NO',  pnl:+1.95, contracts:4, conf:0.66 },
+    { close:'14:00', result:'no',  primary:'NO',  pnl:+2.10, contracts:5, conf:0.73 },
+    { close:'14:15', result:'no',  primary:'NO',  pnl:+1.80, contracts:4, conf:0.68 },
+    { close:'14:30', result:'yes', primary:'YES', pnl:+2.40, contracts:6, conf:0.71 },
+    { close:'14:45', result:'yes', primary:'NO',  pnl:-1.50, contracts:5, conf:0.58 },
+    { close:'15:00', result:'yes', primary:'YES', pnl:+1.20, contracts:3, conf:0.64 },
+    { close:'15:15', result:'yes', primary:'NO',  pnl:-0.84, contracts:4, conf:0.55 },
+  ],
+  activeTrades: [ { side:'YES', confidence:0.62, contracts:1, fill:54 } ],
+  decisions: [
+    { ts:'15:16:21', side:'YES', confidence:0.62 },
+    { ts:'15:01:12', side:'NO',  confidence:0.55 },
+    { ts:'14:46:08', side:'NO',  confidence:0.71 },
+  ],
+  liveBars: [
+    { t:'15:15', close:78392 },{ t:'15:16', close:78404 },{ t:'15:17', close:78445 },
+    { t:'15:18', close:78412 },{ t:'15:19', close:78433 },{ t:'15:20', close:78450 },
+    { t:'15:21', close:78487 },{ t:'15:22', close:78478 },
+  ],
+  liveProb: [
+    { t:'15:15', p:0.48 },{ t:'15:16', p:0.52 },{ t:'15:17', p:0.56 },
+    { t:'15:18', p:0.55 },{ t:'15:19', p:0.62 },{ t:'15:20', p:0.70 },
+    { t:'15:21', p:0.85 },{ t:'15:22', p:0.97 },
+  ],
+  tradeMarkers: [ { t:'15:16', price:78404, side:'YES', conf:0.62 } ],
+};
+const BRAND = { paper:'#F1ECE0', paperDeep:'#E8E1D1', paperCoal:'#3E362F',
+  red:'#C8331E', redDeep:'#8A2418', ink:'#1A1815', inkSoft:'#4A453E',
+  inkMid:'#7A736A', inkPale:'#B5AE9F', inkFaint:'#D8D2C2',
+  mono: "'JetBrains Mono', ui-monospace, monospace" };
+
+function generatePnLCurve(){ const N=200,T=300.28; let s=1729;
+  const r=()=>{ s=(s*9301+49297)%233280; return s/233280; };
+  const p=[]; let v=0;
+  for(let i=0;i<N;i++){ v+=(T/N)*1.05+(r()-0.48)*3.5; p.push(v); }
+  const sc=T/p[N-1]; return p.map(x=>+(x*sc).toFixed(2)); }
+
+const crosshairPlugin = { id:'brandCrosshair', afterDraw(c){ const t=c.tooltip;
+  if(!t||!t._active||!t._active.length)return;
+  const x=t._active[0].element.x,ctx=c.ctx; ctx.save();
+  ctx.beginPath(); ctx.moveTo(x,c.chartArea.top); ctx.lineTo(x,c.chartArea.bottom);
+  ctx.lineWidth=1; ctx.setLineDash([4,3]); ctx.strokeStyle=BRAND.redDeep;
+  ctx.stroke(); ctx.restore(); } };
+const endDotPlugin = { id:'brandEndDot', afterDatasetsDraw(c,a,o){
+  const idx=(o&&o.datasetIndex)??0, m=c.getDatasetMeta(idx);
+  if(!m.data.length)return; const last=m.data[m.data.length-1],ctx=c.ctx;
+  ctx.save(); ctx.beginPath(); ctx.arc(last.x,last.y,3.5,0,Math.PI*2);
+  ctx.fillStyle=BRAND.red; ctx.fill(); ctx.globalAlpha=0.5;
+  ctx.beginPath(); ctx.arc(last.x,last.y,7,0,Math.PI*2);
+  ctx.lineWidth=0.5; ctx.strokeStyle=BRAND.red; ctx.stroke(); ctx.restore(); } };
+
+function liveFrameworkPlugin(oi,ci,fy,dark){ return { id:'liveFramework',
+  beforeDatasetsDraw(c){ const ctx=c.ctx, ya=c.scales.y, xa=c.scales.x;
+    const oX=xa.getPixelForValue(oi), cX=xa.getPixelForValue(ci), fY=ya.getPixelForValue(fy);
+    const lightCol = dark?'rgba(241,236,224,0.3)':BRAND.inkFaint;
+    const refCol   = dark?'rgba(241,236,224,0.4)':BRAND.inkPale;
+    const textCol  = dark?'rgba(241,236,224,0.7)':BRAND.inkMid;
+    ctx.save();
+    ctx.strokeStyle=lightCol; ctx.lineWidth=1;
+    [oX,cX].forEach(x=>{ ctx.beginPath(); ctx.moveTo(x,c.chartArea.top);
+      ctx.lineTo(x,c.chartArea.bottom); ctx.stroke(); });
+    ctx.beginPath(); ctx.setLineDash([4,3]); ctx.strokeStyle=refCol; ctx.lineWidth=1;
+    ctx.moveTo(c.chartArea.left,fY); ctx.lineTo(c.chartArea.right,fY); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle=textCol; ctx.font=`500 10px ${BRAND.mono}`;
+    ctx.fillText('floor $78,121', c.chartArea.right-100, fY-6);
+    ctx.font=`500 9px ${BRAND.mono}`; ctx.fillStyle=textCol;
+    ctx.fillText('open 15:15', oX+4, c.chartArea.top+11);
+    ctx.fillText('close 15:30', cX+4, c.chartArea.top+11);
+    ctx.restore(); } }; }
+
+function initPnLChart(id,dark){ const el=document.getElementById(id); if(!el)return;
+  const axisCol=dark?'rgba(241,236,224,0.6)':BRAND.ink;
+  const gridCol=dark?'rgba(241,236,224,0.08)':BRAND.inkFaint;
+  const tickCol=dark?'rgba(241,236,224,0.7)':BRAND.inkMid;
+  const lineCol=dark?BRAND.paper:BRAND.ink;
+  const d=generatePnLCurve();
+  new Chart(el.getContext('2d'),{ type:'line',
+    data:{ labels:d.map((_,i)=>i), datasets:[{ data:d, borderColor:lineCol,
+      borderWidth:1.25, pointRadius:0, pointHoverRadius:0, fill:false, tension:0 }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      animation:{ duration:900, easing:'easeOutCubic' },
+      layout:{ padding:{ right:20, top:14, bottom:10, left:10 } },
+      scales:{
+        x:{ grid:{ display:false }, border:{ color:axisCol, width:1 },
+          ticks:{ color:tickCol, font:{ family:BRAND.mono, size:10, weight:'500' },
+            maxTicksLimit:6, autoSkip:false,
+            callback(v,i,a){ if(i===0)return '200d ago'; if(i===a.length-1)return 'today'; return ''; } } },
+        y:{ position:'right', grid:{ color:gridCol, lineWidth:0.5, drawTicks:false },
+          border:{ display:false },
+          ticks:{ color:tickCol, font:{ family:BRAND.mono, size:10, weight:'500' },
+            maxTicksLimit:4, padding:8, callback:v=>'$'+v.toFixed(0) } } },
+      plugins:{ legend:{ display:false },
+        tooltip:{ backgroundColor:BRAND.paper, borderColor:BRAND.inkFaint, borderWidth:1,
+          titleColor:BRAND.ink, bodyColor:BRAND.ink,
+          titleFont:{ family:BRAND.mono, size:10, weight:'500' },
+          bodyFont:{ family:BRAND.mono, size:10, weight:'500' },
+          padding:8, cornerRadius:2, displayColors:false,
+          callbacks:{ title:i=>'day '+i[0].label, label:c=>'$'+c.parsed.y.toFixed(2) } } },
+      interaction:{ mode:'index', intersect:false } },
+    plugins:[crosshairPlugin,endDotPlugin] }); }
+
+function initLiveChart(id,dark){ const el=document.getElementById(id); if(!el)return;
+  const axisCol=dark?'rgba(241,236,224,0.6)':BRAND.ink;
+  const gridCol=dark?'rgba(241,236,224,0.08)':BRAND.inkFaint;
+  const tickCol=dark?'rgba(241,236,224,0.7)':BRAND.inkMid;
+  const lineCol=dark?BRAND.paper:BRAND.ink;
+  const probCol=dark?'rgba(241,236,224,0.55)':BRAND.inkSoft;
+  const labels=[]; for(let m=14;m<=31;m++){ const hh=15+Math.floor(m/60),mm=m%60;
+    labels.push(`${hh}:${String(mm).padStart(2,'0')}`); }
+  const pa=labels.map(l=>{ const b=MOCK.liveBars.find(b=>b.t===l); return b?b.close:null; });
+  const qa=labels.map(l=>{ const b=MOCK.liveProb.find(b=>b.t===l); return b?b.p*100:null; });
+  const ma=labels.map(l=>{ const m=MOCK.tradeMarkers.find(m=>m.t===l); return m?m.price:null; });
+  new Chart(el.getContext('2d'),{ type:'line',
+    data:{ labels, datasets:[
+      { label:'price', data:pa, yAxisID:'y', borderColor:lineCol, borderWidth:1.25,
+        pointRadius:0, pointHoverRadius:0, fill:false, tension:0, spanGaps:false },
+      { label:'implied p(yes)', data:qa, yAxisID:'y1', borderColor:probCol,
+        borderWidth:1, borderDash:[3,2], pointRadius:0, pointHoverRadius:0,
+        fill:false, tension:0, spanGaps:false },
+      { label:'trade', data:ma, yAxisID:'y', type:'scatter', showLine:false,
+        pointRadius:4, pointBackgroundColor:lineCol, pointBorderColor:lineCol,
+        pointHoverRadius:6, pointHoverBorderColor:'rgba(241,236,224,0.7)', pointHoverBorderWidth:1 } ] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      animation:{ duration:900, easing:'easeOutCubic' },
+      layout:{ padding:{ top:16, right:48, bottom:4, left:48 } },
+      scales:{
+        x:{ grid:{ display:false }, border:{ color:axisCol, width:1 },
+          ticks:{ color:tickCol, font:{ family:BRAND.mono, size:9, weight:'500' },
+            maxTicksLimit:10, autoSkip:false,
+            callback(v,i){ const l=labels[i]; return (l==='15:15'||l==='15:30'||l==='15:22'||l.endsWith(':20')||l.endsWith(':25'))?l:''; } } },
+        y:{ position:'left', grid:{ color:gridCol, lineWidth:0.5, drawTicks:false },
+          border:{ display:false },
+          ticks:{ color:tickCol, font:{ family:BRAND.mono, size:10, weight:'500' },
+            maxTicksLimit:4, padding:6, callback:v=>'$'+Number(v).toLocaleString() } },
+        y1:{ position:'right', min:0, max:100, grid:{ display:false }, border:{ display:false },
+          ticks:{ color:tickCol, font:{ family:BRAND.mono, size:9, weight:'500' },
+            padding:6, callback:v=>v+'%' } } },
+      plugins:{ legend:{ display:false },
+        tooltip:{ backgroundColor:BRAND.paper, borderColor:BRAND.inkFaint, borderWidth:1,
+          titleColor:BRAND.ink, bodyColor:BRAND.ink,
+          titleFont:{ family:BRAND.mono, size:10, weight:'500' },
+          bodyFont:{ family:BRAND.mono, size:10, weight:'500' },
+          padding:8, cornerRadius:2, displayColors:false,
+          callbacks:{ title:i=>i[0].label, label:(c)=>{
+            if(c.dataset.label==='price')return 'price $'+Number(c.parsed.y).toLocaleString();
+            if(c.dataset.label==='implied p(yes)')return 'p(yes) '+c.parsed.y.toFixed(0)+'%';
+            if(c.dataset.label==='trade'){ const m=MOCK.tradeMarkers[0]; return m.side+' · conf '+m.conf.toFixed(2); }
+            return ''; } } } },
+      interaction:{ mode:'index', intersect:false } },
+    plugins:[crosshairPlugin,liveFrameworkPlugin(1,16,78121,dark)] }); }
+
+function populate() {
+  const r=document.getElementById('reasoning-text'); if(r) r.textContent=MOCK.reasoning;
+
+  const at=document.getElementById('active-trades');
+  if(at) at.innerHTML=MOCK.activeTrades.map(t=>`
+    <div class="side-row">
+      <span class="side">${t.side}</span>
+      <span class="meta">${t.contracts}× · fill ${t.fill}¢ · c${t.confidence.toFixed(2)}</span>
+      <span class="val">$${(t.contracts*t.fill/100).toFixed(2)}</span>
+    </div>`).join('');
+
+  const dc=document.getElementById('decisions');
+  if(dc) dc.innerHTML=MOCK.decisions.map(d=>`
+    <div class="side-row">
+      <span class="meta">${d.ts}</span>
+      <span class="side">${d.side}</span>
+      <span class="val">${d.confidence.toFixed(2)}</span>
+    </div>`).join('');
+
+  const strip=document.getElementById('session-strip');
+  const drawer=document.getElementById('session-drawer');
+  if(strip){
+    strip.innerHTML=MOCK.sessions.map((s,i)=>{
+      const sign=s.pnl>=0?'+':'−'; const won=s.result===s.primary.toLowerCase();
+      return `<button class="session-chip" data-i="${i}">
+        <span class="ts">${s.close}</span>
+        <span class="pnl">${sign}$${Math.abs(s.pnl).toFixed(2)}</span>
+        <span class="result">${won?'win':'loss'}</span>
+      </button>`;
+    }).join('');
+    strip.querySelectorAll('.session-chip').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const i=+btn.dataset.i, s=MOCK.sessions[i];
+        const same=drawer.classList.contains('is-open')&&drawer.dataset.i===String(i);
+        strip.querySelectorAll('.session-chip').forEach(b=>b.classList.remove('is-open'));
+        if(same){ drawer.classList.remove('is-open'); drawer.dataset.i=''; return; }
+        btn.classList.add('is-open'); drawer.classList.add('is-open'); drawer.dataset.i=i;
+        const sign=s.pnl>=0?'+':'−';
+        const won=s.result===s.primary.toLowerCase();
+        drawer.innerHTML=`
+          <p class="title">window ${s.close}</p>
+          <dl>
+            <dt>primary side</dt><dd>${s.primary}</dd>
+            <dt>contracts</dt><dd>${s.contracts}</dd>
+            <dt>confidence</dt><dd>${s.conf.toFixed(2)}</dd>
+            <dt>settlement</dt><dd>${s.result}</dd>
+            <dt>outcome</dt><dd>${won?'win':'loss'}</dd>
+            <dt>p&amp;l</dt><dd>${sign}$${Math.abs(s.pnl).toFixed(2)}</dd>
+          </dl>`;
+      });
+    });
+  }
+}
+
+function initTabs(){
+  const tabs=document.querySelectorAll('.leaf-tab');
+  const panels=document.querySelectorAll('.leaf-panel');
+  let liveInit=false;
+  tabs.forEach(t=>t.addEventListener('click',()=>{
+    tabs.forEach(x=>x.classList.remove('is-active'));
+    panels.forEach(x=>x.classList.remove('is-active'));
+    t.classList.add('is-active');
+    const p=document.querySelector(`.leaf-panel[data-panel="${t.dataset.panel}"]`);
+    if(p) p.classList.add('is-active');
+    if(t.dataset.panel==='live'&&!liveInit){ initLiveChart('live-chart',true); liveInit=true; }
+  }));
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  populate(); initPnLChart('pnl-chart',true); initTabs();
+});
+</script>
+</body>
+</html>
