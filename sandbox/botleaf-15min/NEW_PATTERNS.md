@@ -611,3 +611,243 @@ review.
    sizes — but flagging in case the architect would prefer narrower
    primitives.
 
+---
+---
+
+# Round 3 — final candidates (v16-v18)
+
+Three variants combining the locked-direction pieces (centered
+pressed-paper tab primitive from Round 2 + layered hero from v14 +
+side rail from v13) and integrating the production app shell from
+`sandbox/_archive/shell/v04-final.html`. Per architect resolution of
+Round 2 ARCHITECT DECISIONS:
+- Decision #1 (Sentient italic numeral) — ALLOWED for hero figures
+  ≥56px in this sandbox round; logged below as a proposed brand
+  exception.
+- Decisions #2, #3 — deferred to final-variant selection.
+
+---
+
+## Brand exception proposed: Sentient italic hero numeral
+
+**Used in:** v14, v16, v17, v18 (the hero P&L number rendered at
+72px in italic Sentient 300, tabular-nums)
+
+**Existing brand rule:** STYLE.md /typography "Usage table" maps
+`Numerals (data, prices, %)` to `JetBrains Mono` weight 500 with
+"Tabular figures only." This is the canonical rule for every
+numeric value in the system — sparkline endpoints, chart axis
+labels, indicator numerals, table cells, the lot.
+
+**Proposed exception:** when a numeral is rendered at hero scale
+(≥56px) AND functions as the page's single ceremonial figure,
+Sentient italic 300 may substitute for JetBrains Mono. Tabular-
+nums remains required (Sentient supports `font-variant-numeric:
+tabular-nums`). The exception does NOT apply to:
+
+- Numerals at non-hero scale (anything <56px stays mono — a hero
+  is a hero, not just a "big number")
+- Numerals that participate in a comparison set (column of
+  numbers, a chart axis, a table cell — those are data, mono)
+- Multiple hero numerals on the same page (one hero per page max)
+
+**Reasoning:** the brand's editorial voice is built on Sentient
+italic 300 for "lead paragraphs," "hero headlines," "section
+titles." A hero numeral that anchors a page is doing the same
+editorial job — it's not data being read, it's a figure being
+DECLARED. JetBrains Mono is the data voice; Sentient italic is
+the editorial voice. When a numeral crosses into editorial use
+(single, large, ceremonial), the typography should follow.
+
+**Where it would live in STYLE.md:** /typography section, under
+"Usage table" — append a row:
+```
+| Hero figures (single ceremonial numeral) | Sentient | italic 300 | ≥56px, tabular-nums, max one per page |
+```
+And under "Forbidden" — add: "Sentient italic for any numeral
+under 56px or any numeral inside a chart/table/comparison set."
+
+**Where it lives in the sandbox right now:** scene-local CSS in
+each variant under the `.hero-zone .hero-num` rule. Identical
+across v14, v16, v17, v18. Not promoted to brand yet — the
+architect resolved this for the sandbox round only. A real
+promotion conversation happens at final-variant selection.
+
+**Open question for that conversation:** STYLE.md's gold-budget
+chain explicitly lists which primitives can claim the page's
+"one ceremonial element" — `.eyebrow.is-gold`, `.indicator-gloss
+.is-dark`, `.btn.is-oxblood .jp`, `.tbl.is-eyebrow-header`. The
+hero numeral feels like it should join that chain (one per page
+maximum). Worth deciding whether the chain becomes "one gold OR
+one Sentient hero numeral OR one of the existing chain members,
+not two."
+
+---
+
+## leaf-rail — app-shell-integrated pressed-paper rail
+
+**Used in:** v16 (120px), v17 (220px with stacked stats), v18
+(130px with eyebrow label)
+
+**Why needed:** v16-v18 introduce a SECOND rail concept — a
+leaf-level navigation rail that lives INSIDE the main content
+column, distinct from the brand's app-level `.nav-rail.is-overlay`
+on the far left. Brand has no primitive for "secondary rail
+nested inside content."
+
+**Implementation:** `<aside class="tab-rail-desktop">` is a
+`position: sticky` flex-column container holding `.rail-tab`
+buttons. Each `.rail-tab` is a slash-prefix mono-caps label
+(matching the brand's slash vernacular for nav routes) with the
+pressed-paper emboss vocabulary from the locked tab primitive:
+inactive uses `.emboss-letterpress` shadow stack on `--paper`,
+active uses `.emboss-deboss` on `--paper-deep`. A 2px
+`border-left: var(--ink)` appears on the active state to
+reinforce "you are here" at the rail edge.
+
+Width and presence of a divider vary per variant:
+- v16: 120px wide, NO `border-right` divider — the 36px grid gap
+  IS the visual separator between rail and content.
+- v17: 220px wide, `border-right: 1px var(--ink-faint)` with
+  28px right-padding so content doesn't crowd the divider.
+- v18: 130px wide, `border-right: 1px var(--ink-faint)` with
+  24px right-padding, plus a `.rail-label` mono-9px caps eyebrow
+  at the top reading "NAVIGATION" to explicitly label the rail.
+
+All three coexist in markup with the mobile-fallback centered
+pressed-paper tab row from Round 2. JS handler iterates both
+`.leaf-tab` containers (rail buttons + mobile pressed buttons)
+and keeps `.is-active` synced — same pattern as Round 2 v13.
+
+**Promotion note:** strong candidate. Fits as a sibling to the
+existing brand `.nav-rail` family — name candidate `.tab-rail.is-
+inline` or `.leaf-rail` to distinguish from the app-shell rail.
+Should ship the base recipe (sticky positioning, flex-column,
+slash-prefix tab item, pressed emboss states) plus modifiers for
+divider presence (`.has-divider`), width-via-CSS-custom-property
+(consumer sets `--leaf-rail-width: 120px`), and the optional
+eyebrow label slot. Brand's existing `.nav-rail.is-overlay` is
+reserved for app-level navigation; this would be the canonical
+"section/leaf-level navigation rail" pattern. Note the slash
+vernacular reuse — same `.slash` span pattern as `.nav-item` —
+which suggests a future consolidation where `.nav-item` becomes
+a shared primitive both rails compose from.
+
+---
+
+## leaf-rail-with-stats — rail as full sidebar (v17)
+
+**Used in:** v17
+
+**Why needed:** v17's thesis is that the side rail can absorb
+secondary context (the dense 3-stat strip from the layered hero)
+and become a full sidebar, not just navigation. This frees the
+header to lead with the single hero figure.
+
+**Implementation:** the leaf-rail container holds three sections
+top-to-bottom:
+1. `.rail-section` containing the three `.rail-tab` buttons
+2. `.rail-divider` — a 1px `--ink-faint` horizontal hairline
+   with 22px / 18px vertical margins
+3. `.rail-stats` — flex-column of three `.rs` cells, each a
+   label-above-number stack (mono 9px caps label, mono 17px
+   tabular number, mono 9px meta line)
+
+Wider rail (220px) accommodates the stats without truncation.
+The mobile fallback at `<900px` not only hides the rail and
+shows the centered pressed-paper tab row, but also reveals a
+sibling `.dense-strip-mobile` horizontal strip below the hero
+header — so the secondary stats remain visible on mobile when
+the rail's stats disappear with it.
+
+**Promotion note:** the rail-with-stats composition is scene-
+specific (depends on the page having both nav and secondary
+metrics that fit the same column), but the underlying primitives
+are reusable. If `.leaf-rail` is promoted, the "stats inside
+rail" pattern is just `.indicator-row.is-stacked.is-sm`
+instances (existing brand primitive!) placed inside the rail.
+The horizontal-rule divider between rail sections might earn
+promotion as `.rail-divider` or, more generically, a `.hr-
+hairline` utility that any vertical container can use.
+
+The mobile-fallback pattern of "rail-resident content surfaces
+elsewhere when rail collapses" is worth documenting as a layout
+principle: anything that lives only in the desktop rail must
+have an explicit mobile rendering — silently disappearing data
+is a UX bug.
+
+---
+
+## rail-label — eyebrow caption for leaf rails (v18)
+
+**Used in:** v18
+
+**Why needed:** v18's narrow rail (130px, tabs only) is at risk
+of reading as orphan chrome — three buttons floating with no
+context. A small eyebrow label at the top makes the rail read
+as a deliberately-named formal element.
+
+**Implementation:** `<p class="rail-label">navigation</p>`
+above the first `.rail-tab`. Mono 9px caps tracked 0.22em,
+`--ink-pale` color, no border, 14px bottom margin. Quiet
+enough not to compete with the tab buttons themselves; loud
+enough to caption.
+
+**Promotion note:** companion to `.leaf-rail`. If promoted, it's
+just `.leaf-rail .rail-label` as a documented child slot.
+Eyebrow vocabulary already exists in brand (`.eyebrow-quiet` is
+close — mono caps no-stroke); this might be `.eyebrow-quiet
+.is-rail-caption` if we want it composable, or just a one-off
+`.rail-label` child class scoped to the rail primitive.
+
+---
+
+## App-shell ↔ leaf JS scoping confirmation
+
+**Used in:** v16, v17, v18
+
+The Round 3 brief flagged: "If there's any functional conflict
+between the shell's JS and the variant's own JS, scope the
+variant's JS with a leaf-specific class so handlers don't cross."
+
+Verified no conflicts. The shell's two IIFEs target only:
+- `.palette` / `.palette-trigger` / `.nav-masthead` (palette
+  open/close handler)
+- `.nav-rail.is-overlay` / `.nav-rail-toggle` / `.nav-item`
+  (rail drawer toggle handler)
+
+The leaf's tab handler targets `.leaf-tab`. The leaf's table-
+expand handler targets `.tbl.has-expandable .row.is-expandable`.
+
+Distinct namespaces. No collision possible. The `.leaf-tab`
+class hook is the shared marker between rail buttons and mobile
+pressed buttons, allowing one query selector to catch both.
+
+The shell's `/`-key palette opener checks `e.target.tagName ===
+'INPUT' || ...` and bails out when typing — so leaf-side inputs
+(if added in future iterations) would not accidentally trigger
+the palette. No leaf `<input>` exists in v16-v18, so this is
+moot today.
+
+**Promotion note:** none — this is a JS namespacing convention,
+not a primitive. Documented here as confirmation that the dual-
+rail composition (app rail + leaf rail) is JS-clean.
+
+---
+
+## Round 3 — open questions
+
+None genuinely blocking. The Round 2 ARCHITECT DECISIONS #2 and #3
+remain open per architect direction (deferred to final-variant
+selection time).
+
+One soft observation worth flagging: v17's mobile-fallback
+`.dense-strip-mobile` introduces a third place where the secondary
+stats can render (rail on desktop ≥900px, mobile strip <900px,
+nowhere on the variant if the rail was the only home). v16 and v18
+keep stats in the header so this question doesn't arise. If v17 is
+the winner, the production version should consolidate to "stats
+always render somewhere visible regardless of viewport" rather
+than the dual-source pattern v17 currently uses for sandbox
+clarity.
+
