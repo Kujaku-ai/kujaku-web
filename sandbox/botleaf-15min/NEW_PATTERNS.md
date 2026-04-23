@@ -386,3 +386,228 @@ the promotion queue in priority order would be:
 5. `.stat-masthead` layout wrapper if editorial voice dominates.
 
 Everything else stays scene-local unless a second page asks for it.
+
+---
+---
+
+# Round 2 — locked-direction additions (v11-v15)
+
+Following the design review that locked the centered pressed-paper
+tab direction, five additional variants (v11-v15) were built around
+that one shared primitive. The patterns invented in this round are
+catalogued below.
+
+---
+
+## leaf-tab-pressed — centered pressed-paper tab primitive
+
+**Used in:** v11, v12, v13 (mobile-fallback only), v14, v15
+**Why needed:** the locked direction. Brand has no tab primitive
+yet; this is the candidate that earned approval after Round 1.
+**Implementation:** flex row with `justify-content: center` and
+`flex-wrap: wrap` (mobile sanity — at <360px three buttons wrap to
+two lines instead of overflowing). Each button is 150px min-width
+× ~44px tall, mono 11px label tracked 0.2em uppercase.
+
+INACTIVE state composes the brand's letterpress emboss vocabulary
+verbatim from `textures.css`:
+```
+box-shadow:
+  inset 0 1px 0 rgba(255,251,240,0.7),
+  0 1px 0 rgba(255,251,240,0.5),
+  0 2px 6px rgba(40,30,18,0.06),
+  0 8px 16px rgba(40,30,18,0.05);
+```
+Background `--paper`, color `--ink-mid`.
+
+ACTIVE state composes the brand's deboss vocabulary:
+```
+background: var(--paper-deep);
+box-shadow:
+  inset 0 2px 4px rgba(40,30,18,0.10),
+  inset 0 -1px 0 rgba(255,251,240,0.7),
+  0 1px 0 rgba(255,251,240,0.7);
+```
+Color `--ink`, weight 500. Hover on inactive: color steps to `--ink`
+(no shadow change). Transition `box-shadow` and `background` over
+240ms `--ease-out`. The "physical key" feel is achieved purely through
+the shadow swap — no border, no fill change beyond paper / paper-deep,
+no scale transform.
+
+Mobile fallback at <480px: min-width drops to 110px, padding tightens
+to 12px × 18px, font-size 10px. Three buttons fit comfortably on a
+360px viewport via flex-wrap if needed.
+
+**Promotion note:** this is THE candidate. Promote as the brand's
+canonical tab primitive. Suggested name: `.tab-rail.is-pressed` or
+just `.tab-pressed` if the segmented/underline variants from Round 1
+are not promoted alongside it. The pressed-paper composition is a
+direct re-use of the existing `.emboss-letterpress` (rest) and
+`.emboss-deboss` (active) recipes from `textures.css` — could be
+implemented in `recipes.css` by simply applying `.emboss-letterpress`
+on rest and `.emboss-deboss.is-active` (or similar). One question
+for the architect: should the pressed-paper feel be exposed as a
+generic interaction primitive (a "physical key" pattern other UI
+elements could opt into — toggle buttons, segmented controls, mode
+switches) or kept tab-scoped?
+
+---
+
+## tab-rail-mobile-fallback — media-query toggle pattern
+
+**Used in:** v13
+**Why needed:** v13 ships a vertical pressed rail on desktop and the
+centered pressed-paper row on mobile. Both must coexist in markup;
+neither requires JS to switch.
+**Implementation:** two sibling tab containers in the markup —
+`<aside class="tab-rail-desktop">` and `<div class="leaf-tab-row-mobile">`.
+Default state: rail visible (`display: flex`), mobile row hidden
+(`display: none`). At `@media (max-width: 899px)`: rail hides, mobile
+row appears (`display: flex`). All buttons share the `.leaf-tab` class
+hook so the JS tab-switching handler iterates both containers and
+keeps `.is-active` synced across them — no state divergence regardless
+of which container fired the click. The handler uses
+`tabs.forEach(x => x.classList.toggle('is-active', x.dataset.panel === target))`
+to set state on every button at once.
+**Promotion note:** the dual-container approach is a layout pattern,
+not a primitive — brand doesn't need to ship the toggle CSS. What
+DOES belong in brand is documenting the pattern: when a primitive has
+both a "wide-screen" layout and a "narrow-screen" layout that aren't
+just CSS reflows of the same DOM (e.g. tabs-as-rail vs tabs-as-row),
+the canonical solution is dual-render + media query, not JS layout
+switching. Worth a paragraph in `STYLE.md /components` once we have
+two examples (this is the first).
+
+---
+
+## hero-zone — single editorial display number
+
+**Used in:** v14
+**Why needed:** v14 wanted ONE figure to dominate, treated as
+display typography rather than dashboard data.
+**Implementation:** wrapper section with mono caps eyebrow above
+("LIFETIME · V1.4 PAPER"), a Sentient italic 300 hero number at 72px
+(line-height 1, tabular-nums, letter-spacing -0.02em), and a mono
+caps meta line below. The number is the lone hero — no chart, no
+context bar, just the figure. Mobile breakpoint scales the hero down
+to 48px so it doesn't overrun small viewports.
+**Promotion note:** could be a `.indicator-hero` or `.indicator-display`
+variant of the existing `.indicator-*` family — distinct from
+`.indicator-gloss.is-lg` (44px mono with JP gloss) because this
+specifically uses Sentient italic display typography. Brand /typography
+/ Lead paragraphs already covers Sentient italic 300 at this scale;
+the new pattern is the *use* of Sentient italic for a numeral, not
+the type itself. STYLE.md currently routes numerals to JetBrains Mono
+exclusively ("Numerals · JetBrains Mono · Tabular figures only" in the
+typography usage table) — promoting this requires either an explicit
+exception in STYLE.md ("Sentient italic permitted for hero figures
+≥56px") or staying scene-local. **ARCHITECT DECISION NEEDED** before
+promotion: is Sentient italic on a numeral a brand-rule violation that
+needs an exception clause, or a brand-rule violation that should not
+be promoted? See "Open questions" below.
+
+---
+
+## dense-strip — hairline-divided 3-stat band
+
+**Used in:** v14 (Zone B)
+**Why needed:** secondary stats below the v14 hero needed a quieter
+register than the hero itself.
+**Implementation:** 3-column grid with vertical 1px `--ink-faint`
+borders between cells (`border-right` on every cell except the last).
+Each cell: mono 10px caps label + mono 19px tabular number + mono
+10px caps meta. Top + bottom 1px hairlines bookend the strip.
+Effectively a horizontal `.indicator-row` group with shared dividers.
+**Promotion note:** this is what `.indicator-row` should compose into
+when used as a horizontal strip of 2-4 items. Brand could ship a
+`.indicator-strip` wrapper that handles the grid + hairline-divider
+work, with `.indicator-row` rendering inside each cell. Same pattern
+as the masthead-stats hairline-band from Round 1, just at smaller scale.
+
+---
+
+## broadsheet — newspaper masthead row
+
+**Used in:** v15
+**Why needed:** v15 commits to the newspaper metaphor; the page
+opens with a title-and-stamp masthead row distinct from the editorial
+masthead used elsewhere.
+**Implementation:** `<header class="broadsheet">` is a 3-column grid
+(`1fr auto auto`) with a 2px `--ink` top border and 1px `--ink`
+bottom border. Italic Sentient 300 title at 38px on the left. Mono
+caps date/time stamp on the right ("23 APR 2026 · 15:22 MDT"). A
+`.hanko-slot` slot in the rightmost column carries the only hanko
+in the locked batch (`.hanko.is-28` with 観). Mobile: collapses to a
+single column with title above stamp.
+**Promotion note:** masthead variants are scene-specific — every page
+that wants this voice would compose its own. What's reusable is the
+*recipe*: italic Sentient title + mono stamp + 2px-top + 1px-bottom
+hairlines = "broadsheet header." Could promote as `.masthead-broadsheet`
+or as documentation in /components Nav noting that the existing
+`.nav-masthead` is page-chrome, while broadsheet-style page openers
+are a separate concern. Probably stays scene-local for v1.
+
+---
+
+## news-stats — newspaper-style stat grid
+
+**Used in:** v15
+**Why needed:** v15 needed a stat row that read as continuous newspaper
+columns, not as discrete dashboard cells.
+**Implementation:** 4-column grid with internal vertical hairline
+dividers between cells (`border-right` on each except last). Each cell
+has mono 11px caps label, mono 22px tabular number, mono 10px meta —
+so labels read as column headers, numbers as the column figures.
+Bottom hairline bookends the row. Mobile: collapses to a 2×2 grid.
+**Promotion note:** essentially the same pattern as v14's `.dense-strip`
+just with 4 columns instead of 3 and 22px numbers instead of 19px. If
+the `.indicator-strip` wrapper described above gets promoted, this is
+the same primitive at a different size step. Recommend: bundle
+`.dense-strip` (v14) and `.news-stats` (v15) into a single promoted
+recipe with size modifiers.
+
+---
+
+## reasoning-card — Satoshi 400 body (round 2 confirmation)
+
+**Used in (locked round):** v15 (one of the five)
+**Why needed:** the architect explicitly asked v15 to try Satoshi
+body as a counterpoint to Sentient italic. Round 1 already had this
+counterpoint in v05 and v06. This is the third sample.
+**Implementation:** unchanged from Round 1 — `.card-paper-sunken`
+container with mono caps eyebrow + Satoshi `font-weight: 400`,
+`font-size: 15px`, `line-height: 1.7`, `--ink-soft`,
+`max-width: 62ch`. v11-v14 use the Sentient italic version (the
+default observed in Round 1 winners).
+**Promotion note:** with three Satoshi-body samples in the sandbox now
+(v05, v06, v15) versus seven Sentient-italic samples (every other
+variant), the architect now has a representative set. Pick after
+review.
+
+---
+
+## Open questions / ARCHITECT DECISION NEEDED
+
+1. **Sentient italic on a numeral (v14 hero).** STYLE.md /typography
+   says "Numerals · JetBrains Mono · Tabular figures only." v14's
+   hero number uses Sentient italic 300 at 72px. This is a brand-rule
+   violation in service of editorial voice. Three resolution paths:
+   (a) STYLE.md gets an exception clause ("Sentient italic permitted
+   for hero figures ≥56px when ceremony justifies it"); (b) v14 falls
+   out of contention if this rule is non-negotiable; (c) v14's hero
+   gets re-rendered in 72px JetBrains Mono 500 (loses the editorial
+   ceremony but keeps the rule). Asking before any code changes.
+2. **Pressed-paper "physical key" — generic primitive or tab-scoped?**
+   The pressed-paper interaction (raised → deboss) is now used only
+   for tabs in this sandbox, but it's a coherent interaction grammar
+   that could power toggles, segmented controls, mode switches, even
+   filter pills elsewhere. Ship as `.tab-pressed` (tab-only) or as
+   a generic `.pressed` interactive surface that any element can
+   adopt? Affects the recipe's name and where it lives in `recipes.css`.
+3. **`.dense-strip` (v14) and `.news-stats` (v15) — one promoted
+   recipe with size modifiers, or two separate?** They're structurally
+   identical with different cell counts and font sizes. Recommend
+   one recipe, ship as `.indicator-strip` with `.is-sm`/default/`.is-lg`
+   sizes — but flagging in case the architect would prefer narrower
+   primitives.
+

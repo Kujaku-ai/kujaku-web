@@ -31,6 +31,15 @@ h1 { font-family: var(--font-display); font-style: italic; font-weight: 300;
   font-size: 20px; color: var(--ink-soft); line-height: 1.55; margin: 0 0 56px;
   max-width: 64ch; }
 
+h2 { font-family: var(--font-display); font-style: italic; font-weight: 400;
+  font-size: 28px; color: var(--ink); letter-spacing: -0.01em;
+  margin: 72px 0 14px; padding-bottom: 14px;
+  border-bottom: 1px solid var(--ink-faint); }
+h2:first-of-type { margin-top: 0; }
+.section-lede { font-family: var(--font-display); font-style: italic; font-weight: 300;
+  font-size: 17px; color: var(--ink-soft); line-height: 1.55;
+  margin: 0 0 32px; max-width: 70ch; }
+
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0;
   border-top: 1px solid var(--ink-faint); }
 .v { display: block; padding: 28px 36px 32px; border-bottom: 1px solid var(--ink-faint);
@@ -71,7 +80,41 @@ h1 { font-family: var(--font-display); font-style: italic; font-weight: 300;
 <main class="wrap">
   <p class="crumb">site · sandbox · botleaf-15min</p>
   <h1>BTC · 15-min bot leaf</h1>
-  <p class="lede">Ten design variants exploring the portfolio-note shape for the BTC 15-minute Kalshi bot page. Each variant tests a different thesis on tab placement, header treatment, information density, and editorial voice. Same mock data throughout; comparison is apples-to-apples. Click any tile to open the variant.</p>
+  <p class="lede">Fifteen design variants exploring the portfolio-note shape for the BTC 15-minute Kalshi bot page. Same mock data throughout; comparison is apples-to-apples. Click any tile to open the variant.</p>
+
+  <h2>Locked candidates — centered pressed-paper tabs</h2>
+  <p class="section-lede">Five new variants embodying the direction from design review: centered pressed-paper tab primitive across all five (raised inactive, pressed-in active — emboss vocabulary), varying header treatment. Mock data identical to v01-v10.</p>
+
+  <div class="grid">
+    <a class="v" href="v11.html">
+      <div class="row"><span class="n">v11</span><span class="t">Dense Operator</span></div>
+      <p class="tags"><span>4-stat operator band</span><span>full-word labels</span><span>22-24px numbers</span><span>tbl.has-expandable sessions</span></p>
+      <p class="thesis">v06's tight operator-band header upgraded with full-word labels and 22-24px numbers, paired with the locked centered pressed-paper tab primitive. Hairline-divided 4-stat row above the tabs. Overview reuses the brand .tbl.has-expandable for the past-windows list. The "operator promoted to consumer surface" thesis without v06's terminal extreme.</p>
+    </a>
+    <a class="v" href="v12.html">
+      <div class="row"><span class="n">v12</span><span class="t">Editorial Hero</span></div>
+      <p class="tags"><span>hero-sized lifetime P&amp;L</span><span>size hierarchy across 4 stats</span><span>Sentient italic lede</span></p>
+      <p class="thesis">Hero stat row with explicit size hierarchy: lifetime P&amp;L at 52px (the page's main gesture), portfolio at 36px (secondary), win rate and last decision at 24px (tertiary). A single Sentient italic lede line above ("Paper portfolio · 263 trades placed · 71% settled winners"). Centered pressed-paper tabs follow. Tests whether the leaf can lead with one number rather than four equal weights.</p>
+    </a>
+    <a class="v" href="v13.html">
+      <div class="row"><span class="n">v13</span><span class="t">Side Rail (mobile-aware)</span></div>
+      <p class="tags"><span>vertical pressed rail · desktop</span><span>centered pills · mobile</span><span>media-query toggle, no JS</span></p>
+      <p class="thesis">v12's editorial header above the fold; below it, a 2-column layout where a narrow vertical pressed-style rail on the left holds the three tabs. At &lt; 900px viewport the rail collapses (display: none) and a sibling centered pressed-paper tab row takes over via media query — both containers are present in markup, no JS responsiveness required. The one variant where mobile mechanics are materially designed.</p>
+    </a>
+    <a class="v" href="v14.html">
+      <div class="row"><span class="n">v14</span><span class="t">Layered (hero + dense)</span></div>
+      <p class="tags"><span>72px Sentient italic hero</span><span>3-stat dense band below</span><span>two zones stacked</span></p>
+      <p class="thesis">Two header zones stacked: Zone A is a single editorial hero — Lifetime P&amp;L at 72px italic Sentient 300 with a "LIFETIME · V1.4 PAPER" eyebrow above it. Zone B is a tight 3-stat band below (portfolio, win rate, last decision) at mono 19-20px with hairline vertical dividers. Tests whether you can layer ceremony on top of density without the page reading as confused.</p>
+    </a>
+    <a class="v" href="v15.html">
+      <div class="row"><span class="n">v15</span><span class="t">Masthead (newspaper)</span></div>
+      <p class="tags"><span>broadsheet title row</span><span>4-stat newspaper grid</span><span>観 hanko (only variant)</span><span>Satoshi body reasoning</span></p>
+      <p class="thesis">Two-row newspaper masthead: italic Sentient 38px "BTC · 15-min bot leaf" left-aligned, mono "23 APR 2026 · 15:22 MDT" stamp right-aligned, hairline rules above and below. A 観 hanko at .is-28 sits in the masthead corner — this is the only variant in the locked batch claiming hanko budget. Below the masthead: a 4-stat newspaper-style row with vertical hairline dividers between items. Reasoning panel uses Satoshi 400 body type as a counterpoint to the Sentient italic of v11-v14.</p>
+    </a>
+  </div>
+
+  <h2>Reference — first round (v01–v10)</h2>
+  <p class="section-lede">Original ten variants exploring the design space across tab placement, header treatment, information density, session-strip shape, and editorial voice. Kept as reference; the locked direction above absorbed what worked.</p>
 
   <div class="grid">
     <a class="v" href="v01.html">
