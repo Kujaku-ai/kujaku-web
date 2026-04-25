@@ -707,6 +707,74 @@ The build is "done" when:
 
 ---
 
+## Performance Ceiling
+
+Post-Phase 7.5/7.6 the asset page accepts a Lighthouse performance
+score of **55–56 across all routes** (3 routes × 2 form factors
+sampled: `/crypto/btc/overview`, `/crypto/btc/charting`,
+`/qc/ionq/news` × desktop + mobile). Accessibility targets are met
+(≥95) and locked.
+
+### Root cause
+
+Astro's auto-generated component CSS bundle (`_astro/_tab_*.css`,
+~53KB) loads synchronously and adds ~10 seconds to LCP under
+Lighthouse's headless-Chrome + slow-3G simulation. Astro auto-
+injects this `<link>` reference into the page `<head>`; it isn't
+trivially convertible to async without a build hook. Brand CSS
+(recipes.css, fonts.css, etc.) was a parallel render-blocker but
+can be deferred (the Phase 7.6 attempt — see below).
+
+### Why we accept 55–56
+
+- Auth-walled internal operator tool. Real users are kujaku
+  staff on broadband with warm caches; cold-cache slow-3G
+  Lighthouse simulation does not represent actual UX.
+- The chart bundle (lightweight-charts, ~170KB / 54KB gzipped)
+  is unavoidable for the visual contract. Phase 7.5 already
+  pushed chart hydration to `requestIdleCallback`, dropping
+  TBT to 0ms — the remaining bottleneck is purely
+  render-blocking CSS, not script work.
+- A11y target ≥95 IS hit and verified across all routes.
+
+### Phase 7.6 attempt (reverted)
+
+The async-CSS approach (inline critical tokens + brand CSS via
+`rel="preload"` + onload-swap) was implemented and Lighthouse-
+measured. It traded a modest LCP gain for a CLS regression of
+~1.0 from font-swap reflow on text-heavy routes (news-ionq,
+~16 italic Sentient blocks). Net perf score was equal-or-worse
+than Phase 7.5 baseline. Reverted per architect protocol.
+
+The diff is preserved at the git tag
+`phase7.6-attempted-css-async` (origin) for future reference.
+
+### Future remediation paths (NOT scheduled)
+
+If perf becomes load-bearing — e.g., the asset page becomes
+externally accessible or unmetered third-party UX — these are
+the candidates in expected-ROI order:
+
+a) **Astro middleware that rewrites component CSS `<link>` to
+   `rel="preload"` + onload-swap.** Most invasive but addresses
+   the actual gate; eliminates the 53KB sync block.
+b) **Critical-CSS extraction at build time** via `beasties`,
+   `critical`, or `penthouse`. Standard pattern; adds build
+   infrastructure + ongoing maintenance of a critical-set
+   manifest per route.
+c) **Font preload tags** (`<link rel="preload" as="font"
+   crossorigin>`) for above-the-fold weights, plus
+   `size-adjust` / `ascent-override` / `descent-override` per
+   `@font-face` to dimensionally match fallback to web fonts.
+   Eliminates the font-swap CLS that defeated the (b) path
+   in 7.6.
+
+Phase 8 live-wiring will likely surface higher-impact issues
+(latency, polling cadence, cache invalidation) that should be
+prioritized over these.
+
+---
+
 ## TODO Punchlist (after v1 ships)
 
 Not blockers; track separately.
