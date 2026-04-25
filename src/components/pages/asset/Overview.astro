@@ -1,0 +1,49 @@
+---
+import type { AssetData } from '~/lib/types/asset';
+
+export interface Props { data: AssetData }
+const { data } = Astro.props;
+---
+
+<section class="phase1-stub">
+  <p class="eyebrow">phase 2 · overview</p>
+  <h2 class="title">Overview — {data.fullName}</h2>
+  <p class="body">
+    Hero price, perf+bias card, mini-chart with TF buttons, and recent
+    activity feed will live here. See ASSETPAGE_BUILD_SPEC.md → Per-Page
+    Specs → Overview for the full layout.
+  </p>
+  <p class="meta">slug: {data.slug} · symbol: {data.symbol} · sector: {data.sector}</p>
+</section>
+
+<style>
+  .phase1-stub {
+    padding: 36px 32px 40px;
+    background: var(--paper);
+    border-radius: 4px;
+    box-shadow:
+      inset 0 1px 0 rgba(255,251,240,0.7),
+      0 1px 0 rgba(255,251,240,0.5),
+      0 4px 12px rgba(40,30,18,0.05);
+  }
+  .eyebrow {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--red); margin: 0 0 14px;
+  }
+  .title {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: 28px; line-height: 1.1; letter-spacing: -0.01em;
+    color: var(--ink); margin: 0 0 14px;
+  }
+  .body {
+    font-family: var(--font-body); font-size: 14px; line-height: 1.6;
+    color: var(--ink-mid); margin: 0 0 20px; max-width: 64ch;
+  }
+  .meta {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-pale); margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+</style>
