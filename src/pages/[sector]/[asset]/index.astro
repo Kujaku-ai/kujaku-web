@@ -1,5 +1,18 @@
 ---
-import AssetPage from '~/components/pages/AssetPage.astro';
-const { sector, asset } = Astro.params;
+import { sectorBySlug, assetBySlug } from '~/config/taxonomy';
+
+const { sector: sectorSlug, asset: assetSlug } = Astro.params;
+
+if (!sectorSlug || !assetSlug) {
+  return new Response('Not found', { status: 404 });
+}
+
+const sector = sectorBySlug(sectorSlug);
+const asset = assetBySlug(assetSlug);
+
+if (!sector || !asset || asset.canonicalSector !== sector.slug) {
+  return new Response('Not found', { status: 404 });
+}
+
+return Astro.redirect(`/${sectorSlug}/${assetSlug}/overview`, 302);
 ---
-<AssetPage sectorSlug={sector!} assetSlug={asset!} />

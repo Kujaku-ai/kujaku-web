@@ -1,0 +1,28 @@
+---
+import AssetPage from '~/components/pages/AssetPage.astro';
+import { sectorBySlug, assetBySlug } from '~/config/taxonomy';
+import { isAssetTab } from '~/lib/types/asset';
+import { loadAssetData } from '~/lib/data/mock';
+
+const { sector: sectorSlug, asset: assetSlug, tab } = Astro.params;
+
+if (!sectorSlug || !assetSlug || !tab) {
+  return new Response('Not found', { status: 404 });
+}
+
+const sector = sectorBySlug(sectorSlug);
+const asset = assetBySlug(assetSlug);
+
+if (!sector || !asset || asset.canonicalSector !== sector.slug) {
+  return new Response('Not found', { status: 404 });
+}
+
+if (!isAssetTab(tab)) {
+  return new Response('Not found', { status: 404 });
+}
+
+if (!loadAssetData(assetSlug)) {
+  return new Response('Not found', { status: 404 });
+}
+---
+<AssetPage sectorSlug={sectorSlug} assetSlug={assetSlug} activeTab={tab} />
