@@ -289,5 +289,14 @@ const seriesPayload = JSON.stringify(seriesByTf);
     });
   }
 
-  document.querySelectorAll<HTMLElement>('.mini-tile').forEach(init);
+  // Defer chart construction to idle so the page paints first.
+  function deferInit(root: HTMLElement) {
+    if ('requestIdleCallback' in window) {
+      (window as Window & typeof globalThis)
+        .requestIdleCallback(() => init(root), { timeout: 1500 });
+    } else {
+      setTimeout(() => init(root), 100);
+    }
+  }
+  document.querySelectorAll<HTMLElement>('.mini-tile').forEach(deferInit);
 </script>

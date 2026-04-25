@@ -455,5 +455,19 @@ const payload = JSON.stringify({ line: lineByTf, candle: barsByTf });
     });
   }
 
-  document.querySelectorAll<HTMLElement>('.full-chart-tile').forEach(init);
+  // Defer chart construction to idle. createChart + addLineSeries +
+  // addCandlestickSeries + setData with 60+ bars is the largest
+  // single hit on the main thread (~300ms under headless Chrome);
+  // pushing it past first paint lets the page be interactive
+  // immediately. Falls back to setTimeout on engines without
+  // requestIdleCallback (Safari < 18).
+  function deferInit(root: HTMLElement) {
+    if ('requestIdleCallback' in window) {
+      (window as Window & typeof globalThis)
+        .requestIdleCallback(() => init(root), { timeout: 1500 });
+    } else {
+      setTimeout(() => init(root), 100);
+    }
+  }
+  document.querySelectorAll<HTMLElement>('.full-chart-tile').forEach(deferInit);
 </script>
