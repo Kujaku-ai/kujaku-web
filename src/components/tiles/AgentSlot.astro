@@ -1,0 +1,118 @@
+---
+// Sunken slot used by the Agents tab. Two variants:
+//   variant="add"   — shown below an existing agent card; outline
+//                     button "+ propose an analyst" alerts a TODO.
+//   variant="empty" — shown when the ticker has zero agents; passive
+//                     empty state, no button.
+//
+// Same visual primitive as the Comparisons "build your own" slot —
+// dashed border on a paper-deep background, centered content, italic
+// Sentient title.
+
+export type AgentSlotVariant = 'add' | 'empty';
+
+export interface Props {
+  variant: AgentSlotVariant;
+  fullName: string;            // ticker fullName for empty-state copy
+}
+
+const { variant, fullName } = Astro.props;
+---
+
+{variant === 'add' ? (
+  <aside class="agent-slot is-add">
+    <p class="as-eyebrow">+ next analyst</p>
+    <h3 class="as-title">Add another analyst</h3>
+    <p class="as-body">
+      Subscribe to additional analyst families as they ship. Each
+      analyst plugs into this ticker as a separate node with its own
+      portfolio, win rate, and decision feed.
+    </p>
+    <button type="button" class="as-cta" data-action="propose">+ propose an analyst</button>
+  </aside>
+) : (
+  <aside class="agent-slot is-empty">
+    <p class="as-eyebrow">analyst · {fullName.toLowerCase()}</p>
+    <h3 class="as-title">First analyst incoming</h3>
+    <p class="as-body">
+      Kujaku is preparing the first analyst for {fullName}. Analysts
+      arrive when a strategy proves profitable against the live
+      collector feed.
+    </p>
+  </aside>
+)}
+
+<style>
+  .agent-slot {
+    background: var(--paper-deep);
+    border: 1px dashed var(--ink-faint);
+    border-radius: 4px;
+    padding: 36px 26px 38px;
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center; gap: 12px;
+    box-shadow: inset 0 1px 2px rgba(40,30,18,0.04);
+  }
+
+  .as-eyebrow {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 0;
+  }
+
+  .as-title {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: 24px; line-height: 1.2; letter-spacing: -0.01em;
+    color: var(--ink); margin: 0;
+  }
+
+  .as-body {
+    font-family: var(--font-body); font-size: 13px; line-height: 1.55;
+    color: var(--ink-mid); margin: 0;
+    max-width: 48ch;
+  }
+
+  /* Outline button — same vocabulary as the comparison slot's CTA.
+     border --ink → on hover, fill (bg --ink, color --paper). */
+  .as-cta {
+    margin-top: 8px;
+    display: inline-flex; align-items: center;
+    padding: 10px 22px;
+    background: transparent;
+    border: 1px solid var(--ink);
+    border-radius: 2px;
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 180ms var(--ease-out),
+                color 180ms var(--ease-out);
+  }
+  .as-cta:hover {
+    background: var(--ink); color: var(--paper);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .as-cta { transition: none; }
+  }
+
+  @media (max-width: 700px) {
+    .agent-slot { padding: 28px 22px 30px; }
+    .as-title { font-size: 20px; }
+  }
+</style>
+
+<script>
+  // TODO Phase 8+: real propose-an-analyst flow (form → POST to a
+  // strategy-proposal service → "incoming" state). For Phase 4 this
+  // is a placeholder alert, same UX as v02's "+ start a comparison"
+  // build-your-own button.
+  document
+    .querySelectorAll<HTMLButtonElement>('.as-cta[data-action="propose"]')
+    .forEach((btn) => {
+      btn.addEventListener('click', () => {
+        alert(
+          'TODO — analyst proposals open in a future phase. ' +
+          'For now, ping the architect with what you have in mind.',
+        );
+      });
+    });
+</script>

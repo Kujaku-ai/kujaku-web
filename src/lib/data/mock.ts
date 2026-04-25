@@ -155,7 +155,7 @@ const MOCK_DATA: Record<string, AssetData> = {
       name: '15-minute',
       strategy: 'kalshi15min',
       mode: 'paper',
-      version: 'v1.5',
+      version: 'v1.5.2',
       portfolio: 1021.84, cash: 940.18, exposure: 81.66,
       winRate: 0.6512, wins: 28, losses: 15,
       totalTrades: 47, settledTrades: 43, totalPnl: 21.84,
@@ -168,6 +168,33 @@ const MOCK_DATA: Record<string, AssetData> = {
         volume: 1447, openInterest: 1355,
       },
     },
+    // View-shape agents — derived from node + hypotheses[0]. The mock.ts
+    // pre-bakes the values so AgentCard renders without computing.
+    agents: [
+      {
+        agentSlug: 'kalshi-15min-btc',
+        name: '15-minute BTC',
+        role: 'Trading agent · 15-minute binary windows',
+        modeTag: 'PAPER',
+        versionTag: 'v1.5.2',
+        description:
+          "Reads chart structure, liquidity, and confluence signals to place paper trades on every Kalshi 15-minute BTC window. Architecture by Claude · last decision 8s ago.",
+        winRatePct: 65,
+        portfolioValue: '$1,021.84 (+2.18% vs start)',
+        tradesCount: 47,
+        pnlValue: '+$21.84',
+        currentlyActive: 'KXBTC15M-26APR241530-30',
+        latestDecision: {
+          ts: '2026-04-24T19:19:52Z',
+          windowTicker: 'KXBTC15M-26APR241530-30',
+          side: 'NO',
+          thesis: 'Bearish reversal stalling at VWAP',
+          reasoning:
+            'Momentum reversed up but lacks confirmation; 1H bias still bearish dominant.',
+        },
+        href: '/agents/kalshi-15min-btc',
+      },
+    ],
     news: {
       primaries: [
         { ts: '2026-04-24T17:40:00Z', source: 'CoinDesk',         headline: 'Bitcoin holds $77K as Fed minutes loom',           excerpt: 'Traders are parsing every word of the April FOMC minutes for hints on the pace of rate cuts; options volatility on BTC climbed into the release.' },
@@ -276,6 +303,7 @@ const MOCK_DATA: Record<string, AssetData> = {
     bars: generateQuantumBars(16.525, 50, 0.015),
     overlays: null,
     node: { available: false },
+    agents: [],
     news: {
       primaries: [
         { ts: '2026-04-24T16:12:00Z', source: 'IEEE Spectrum',   headline: 'Rigetti publishes 84-qubit fidelity benchmarks',    excerpt: 'New results from Rigetti show two-qubit gate fidelity above 99.5% on their latest Ankaa system, the best public figure the company has reported.' },
@@ -345,6 +373,7 @@ const MOCK_DATA: Record<string, AssetData> = {
     bars: generateQuantumBars(42.74, 5, 0.02),
     overlays: null,
     node: { available: false },
+    agents: [],
     news: {
       primaries: [
         { ts: '2026-04-24T15:00:00Z', source: 'Wall Street Journal', headline: 'IonQ secures $55M DOE contract',                excerpt: 'The five-year DOE Office of Science award targets materials-simulation workloads on IonQ’s trapped-ion hardware through FY2030.' },
@@ -413,6 +442,7 @@ const MOCK_DATA: Record<string, AssetData> = {
     bars: generateQuantumBars(18.44, 57, 0.012),
     overlays: null,
     node: { available: false },
+    agents: [],
     news: {
       primaries: [
         { ts: '2026-04-24T14:30:00Z', source: 'CNBC',            headline: 'D-Wave annealer used in drug-discovery pilot at BMS', excerpt: 'Bristol Myers Squibb reported first results from a year-long pilot applying D-Wave’s hybrid solver to peptide-folding search.' },

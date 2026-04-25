@@ -213,6 +213,34 @@ export type Comparison = {
   refreshedAt: string;      // ISO
 };
 
+// Agent — the view-shape consumed by AgentCard. Distinct from BotData
+// (the wire shape returned by the bot endpoint). Phase 4 ships it
+// pre-baked in mock.ts; Phase 8+ will compose Agents from BotData +
+// /api/decisions[0] in the bot.ts client.
+export type AgentLatestDecision = {
+  ts: string;                  // ISO
+  windowTicker: string;
+  side: 'YES' | 'NO';
+  thesis: string;
+  reasoning: string;
+};
+
+export type Agent = {
+  agentSlug: string;           // 'kalshi-15min-btc'
+  name: string;                // '15-minute BTC' (italic Sentient hero)
+  role: string;                // 'Trading agent · 15-minute binary windows'
+  modeTag: string;             // 'PAPER' (uppercase)
+  versionTag: string;          // 'v1.5.2'
+  description: string;         // body paragraph under hero
+  winRatePct: number;          // integer, no decimal in v1
+  portfolioValue: string;      // pre-formatted: '$1,021.84 (+2.18% vs start)'
+  tradesCount: number;
+  pnlValue: string;            // pre-formatted: '+$21.84'
+  currentlyActive: string | null;     // window ticker or null when not active
+  latestDecision: AgentLatestDecision | null;
+  href: string;                // dedicated agent page (TODO: future phase)
+};
+
 // Single asset payload — composes everything an AssetPage tab needs.
 export type AssetData = {
   sector: string;             // 'crypto' | 'quantum' (display label, not URL slug)
@@ -231,7 +259,8 @@ export type AssetData = {
   stale: boolean;
   bars: Bar[];
   overlays: Overlays | null;  // null until charting-calculations is wired
-  node: BotData;
+  node: BotData;              // wire shape — Phase 8+ live data feed
+  agents: Agent[];            // view shape — drives the Agents tab
   news: NewsBundle;
   comparisons: Comparison[];
   swings: Swing[];

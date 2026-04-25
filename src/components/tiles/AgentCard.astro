@@ -1,0 +1,325 @@
+---
+// Per-analyst card. Server-rendered from a pre-shaped Agent object
+// (see ~/lib/types/asset.ts). The OUTER wrapper is NOT pressable —
+// only the inner CTA button at the bottom is. Architect removed
+// outer-card pressability in v02 (cards aren't buttons).
+//
+// Layout top-to-bottom:
+//   top row (eyebrow + tags) → hero (name + win-rate, side-by-side
+//   ≥700 px) → description → 3-stat strip → currently-active line
+//   → editorial latest-decision block → dark CTA.
+
+import type { Agent } from '~/lib/types/asset';
+
+export interface Props { agent: Agent }
+const { agent } = Astro.props;
+
+function whenLabel(iso: string): string {
+  const d = new Date(iso);
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const day = d.getUTCDate();
+  const mon = months[d.getUTCMonth()];
+  const h = String(d.getUTCHours()).padStart(2, '0');
+  const m = String(d.getUTCMinutes()).padStart(2, '0');
+  return `${day} ${mon} · ${h}:${m} UTC`;
+}
+
+const ld = agent.latestDecision;
+---
+
+<article class="agent-card">
+  <header class="ac-top">
+    <p class="ac-eyebrow">analyst · kalshi 15-min <span class="jp">指標</span></p>
+    <div class="ac-tags">
+      <span class="ac-tag is-mode">{agent.modeTag}</span>
+      <span class="ac-tag">{agent.versionTag}</span>
+    </div>
+  </header>
+
+  <div class="ac-hero">
+    <div class="ac-hero-name">
+      <h3 class="ac-name">{agent.name}</h3>
+      <p class="ac-role">{agent.role}</p>
+    </div>
+    <div class="ac-hero-stat">
+      <p class="ac-hero-num">{agent.winRatePct}%</p>
+      <p class="ac-hero-lab">win rate</p>
+    </div>
+  </div>
+
+  <p class="ac-desc">{agent.description}</p>
+
+  <hr class="ac-divider" />
+
+  <div class="ac-stats">
+    <div class="cell">
+      <p class="lab">portfolio</p>
+      <p class="num">{agent.portfolioValue.split(' ')[0]}</p>
+      <p class="meta">{agent.portfolioValue.split(' ').slice(1).join(' ')}</p>
+    </div>
+    <div class="cell">
+      <p class="lab">trades</p>
+      <p class="num">{agent.tradesCount}</p>
+      <p class="meta">paper mode</p>
+    </div>
+    <div class="cell">
+      <p class="lab">total p&amp;l</p>
+      <p class="num">{agent.pnlValue}</p>
+      <p class="meta">since v1.0</p>
+    </div>
+  </div>
+
+  <p class="ac-active-eyebrow">currently active</p>
+  <p class="ac-active-line">
+    {agent.currentlyActive
+      ? <span class="ticker">{agent.currentlyActive}</span>
+      : <span class="empty">no active window</span>
+    }
+  </p>
+
+  {ld && (
+    <>
+      <hr class="ac-divider" />
+
+      <p class="ac-section-eyebrow">latest decision</p>
+      <div class="ac-latest">
+        <div class="ac-latest-meta">
+          <span class="ts">{whenLabel(ld.ts)}</span>
+          <span class="dot">·</span>
+          <span class="window">{ld.windowTicker}</span>
+        </div>
+        <p class="ac-side"><span class="chip">{ld.side}</span></p>
+        <h4 class="ac-thesis">{ld.thesis}</h4>
+        <p class="ac-reason">{ld.reasoning}</p>
+      </div>
+    </>
+  )}
+
+  {/* TODO: dedicated /agents/{slug} page lands in a future phase.
+      For now the link goes to the agent's href but that route is a
+      404. Architect approved the static href for Phase 4. */}
+  <a class="ac-cta is-pressable" href={agent.href}>
+    enter analyst <span class="arrow" aria-hidden="true">→</span>
+  </a>
+</article>
+
+<style>
+  .agent-card {
+    background: var(--paper);
+    border-radius: 4px;
+    padding: 26px 30px 24px;
+    box-shadow:
+      inset 0 1px 0 rgba(255,251,240,0.7),
+      0 1px 0 rgba(255,251,240,0.5),
+      0 4px 12px rgba(40,30,18,0.05);
+    display: flex; flex-direction: column;
+  }
+
+  /* Top row: eyebrow on the left, mode/version tag pills on the right. */
+  .ac-top {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 16px; margin-bottom: 22px;
+    flex-wrap: wrap;
+  }
+  .ac-eyebrow {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 0;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  .ac-eyebrow .jp {
+    font-family: var(--font-jp); font-size: 13px;
+    letter-spacing: 0.04em; text-transform: none;
+    color: var(--red); font-weight: 400;
+  }
+  .ac-tags { display: flex; gap: 6px; }
+  .ac-tag {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink); margin: 0;
+    padding: 3px 8px; border-radius: 2px;
+    background: var(--paper-deep);
+  }
+  .ac-tag.is-mode {
+    background: var(--paper-coal); color: var(--paper);
+  }
+
+  /* Hero: italic Sentient name on the left, italic Sentient win-rate
+     on the right. Side-by-side at desktop, stacked ≤700 px. */
+  .ac-hero {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 32px;
+    align-items: end;
+    padding-bottom: 18px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--ink-faint);
+  }
+  .ac-hero-name { min-width: 0; }
+  .ac-name {
+    font-family: var(--font-display); font-style: italic; font-weight: 300;
+    font-size: 38px; line-height: 1.05; letter-spacing: -0.02em;
+    color: var(--ink); margin: 0 0 6px;
+  }
+  .ac-role {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 0;
+  }
+  .ac-hero-stat { text-align: right; }
+  .ac-hero-num {
+    font-family: var(--font-display); font-style: italic; font-weight: 300;
+    font-size: 38px; line-height: 1; letter-spacing: -0.02em;
+    color: var(--ink); margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .ac-hero-lab {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 6px 0 0;
+  }
+
+  .ac-desc {
+    font-family: var(--font-body); font-size: 14px; line-height: 1.6;
+    color: var(--ink-soft); margin: 0 0 22px;
+    max-width: 60ch;
+  }
+
+  .ac-divider {
+    border: 0; border-top: 1px solid var(--ink-faint);
+    margin: 0 0 18px;
+  }
+
+  /* 3-stat strip — hairline-divided. */
+  .ac-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 24px; margin: 0 0 18px;
+  }
+  .ac-stats .cell {
+    display: flex; flex-direction: column; gap: 4px;
+    border-left: 1px solid var(--ink-faint);
+    padding-left: 16px;
+  }
+  .ac-stats .cell:first-child { border-left: 0; padding-left: 0; }
+  .ac-stats .lab {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-pale); margin: 0;
+  }
+  .ac-stats .num {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: 22px; color: var(--ink); margin: 0;
+    line-height: 1; letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+  .ac-stats .meta {
+    font-family: var(--font-mono); font-size: 9px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 2px 0 0;
+  }
+
+  /* Currently-active single-line summary. */
+  .ac-active-eyebrow {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 0 0 6px;
+  }
+  .ac-active-line {
+    font-family: var(--font-mono); font-size: 12px;
+    color: var(--ink); margin: 0;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+  }
+  .ac-active-line .empty { color: var(--ink-pale); font-style: italic; }
+
+  /* Editorial latest-decision block. */
+  .ac-section-eyebrow {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 0 0 10px;
+  }
+  .ac-latest { margin: 0 0 22px; }
+  .ac-latest-meta {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 0 0 10px;
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .ac-latest-meta .dot { color: var(--ink-faint); }
+  .ac-side { margin: 0 0 8px; }
+  .ac-side .chip {
+    display: inline-block;
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--paper); background: var(--paper-coal);
+    padding: 4px 8px; border-radius: 2px;
+  }
+  .ac-thesis {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: 18px; line-height: 1.3; color: var(--ink);
+    margin: 0 0 8px; letter-spacing: -0.005em;
+    max-width: 60ch;
+  }
+  .ac-reason {
+    font-family: var(--font-body); font-size: 13px; line-height: 1.55;
+    color: var(--ink-soft); margin: 0;
+    max-width: 60ch;
+  }
+
+  /* Dark CTA. is-pressable is brand-recipe — paper-coal background,
+     paper text, deboss inset shadow on hover. */
+  .ac-cta.is-pressable {
+    align-self: flex-start;
+    margin-top: 18px;
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 12px 20px;
+    background: var(--paper-coal); color: var(--paper);
+    border-radius: 2px;
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.28em; text-transform: uppercase;
+    text-decoration: none; cursor: pointer;
+    box-shadow:
+      inset 0 1px 0 rgba(255,251,240,0.10),
+      0 2px 6px rgba(40,30,18,0.10),
+      0 8px 18px rgba(40,30,18,0.06);
+    transition: box-shadow 180ms var(--ease-out),
+                transform 180ms var(--ease-out);
+  }
+  .ac-cta.is-pressable:hover {
+    box-shadow:
+      inset 0 2px 6px rgba(0,0,0,0.30),
+      inset 0 -1px 0 rgba(255,251,240,0.08);
+  }
+  .ac-cta.is-pressable:active {
+    transform: translateY(1px);
+  }
+  .ac-cta .arrow { font-family: var(--font-mono); font-size: 12px; }
+  @media (prefers-reduced-motion: reduce) {
+    .ac-cta.is-pressable { transition: none; }
+    .ac-cta.is-pressable:active { transform: none; }
+  }
+
+  @media (max-width: 700px) {
+    .agent-card { padding: 22px 22px 20px; }
+    .ac-hero {
+      grid-template-columns: 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .ac-hero-stat { text-align: left; }
+    .ac-name { font-size: 30px; }
+    .ac-hero-num { font-size: 30px; }
+    .ac-stats {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+    .ac-stats .cell {
+      border-left: 0; padding-left: 0;
+      padding-top: 12px; padding-bottom: 12px;
+      border-top: 1px solid var(--ink-faint);
+    }
+    .ac-stats .cell:first-child { border-top: 0; padding-top: 0; }
+    .ac-thesis { font-size: 16px; }
+  }
+</style>
