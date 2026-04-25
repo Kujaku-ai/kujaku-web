@@ -60,13 +60,13 @@ const TAB_LABELS: Record<AssetTab, string> = {
       sourceLabel={data.sourceLabel}
       status={data.stale ? 'stale' : 'live'}
       lastUpdatedISO={data.lastUpdated}
+      bars={data.bars}
     />
 
     <main class="content">
       <Masthead
         sectorName={sector.name}
         fullName={data.fullName}
-        activeTab={activeTab}
         stamp={stamp}
       />
 

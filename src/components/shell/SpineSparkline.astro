@@ -1,0 +1,146 @@
+---
+// Identity-spine sparkline. 30-bar mini line chart for the asset's
+// recent closes. lightweight-charts client island; mock data only —
+// the parent passes a pre-shaped series in via `data-series` and the
+// island reads it on hydration.
+//
+// Pulse is a CSS-animated halo at the last point. JS positions the
+// pulse element at (timeToCoordinate(last.time), priceToCoordinate(
+// last.value)) and re-positions on resize / visible-range-change.
+
+import type { TfPoint } from '~/lib/data/mock';
+
+export interface Props {
+  series: TfPoint[];      // last-N closes
+}
+
+const { series } = Astro.props;
+const seriesJson = JSON.stringify(series);
+---
+
+<div class="spine-spark" data-series={seriesJson}>
+  <div class="spark-mount" aria-hidden="true"></div>
+  <span class="spark-pulse" aria-hidden="true"></span>
+</div>
+
+<style>
+  .spine-spark {
+    position: relative;
+    width: 100%;
+    height: 34px;
+  }
+  .spark-mount {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* Live-pulse — same recipe as the mini-chart pulse, scaled down for
+     the spine. Brand red, ~1.8s loop, two staggered halos. The dot
+     stays static; the ::before/::after pseudo-elements scale + fade. */
+  .spark-pulse {
+    position: absolute;
+    top: -100px; left: -100px;          /* off-screen until JS positions it */
+    width: 6px; height: 6px;
+    background: var(--red);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 5;
+    transform: translate(-50%, -50%);
+    box-shadow:
+      0 0 0 1.5px rgba(255, 251, 240, 0.6),
+      0 0 8px rgba(200, 51, 30, 0.5);
+  }
+  .spark-pulse::before,
+  .spark-pulse::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .spark-pulse::before { animation: spark-pulse-ring 1.8s ease-out infinite; }
+  .spark-pulse::after  { animation: spark-pulse-ring 1.8s ease-out infinite; animation-delay: 0.9s; }
+  @keyframes spark-pulse-ring {
+    0%   { transform: translate(-50%, -50%) scale(1);   opacity: 0.6; }
+    80%  { opacity: 0; }
+    100% { transform: translate(-50%, -50%) scale(3);   opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .spark-pulse::before, .spark-pulse::after { animation: none; }
+  }
+</style>
+
+<script>
+  import { createChart, LineStyle, CrosshairMode } from 'lightweight-charts';
+
+  type Pt = { time: number; value: number };
+
+  function init(root: HTMLDivElement) {
+    const mount = root.querySelector<HTMLDivElement>('.spark-mount');
+    const pulse = root.querySelector<HTMLSpanElement>('.spark-pulse');
+    const raw = root.dataset.series;
+    if (!mount || !pulse || !raw) return;
+
+    let series: Pt[] = [];
+    try { series = JSON.parse(raw) as Pt[]; } catch { return; }
+    if (series.length < 2) {
+      // 1-point or empty — leave the pulse off-screen, no chart.
+      return;
+    }
+
+    const chart = createChart(mount, {
+      width: mount.clientWidth || 180,
+      height: mount.clientHeight || 34,
+      layout: {
+        background: { color: 'transparent' },
+        textColor: 'transparent',
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 9,
+        attributionLogo: false,
+      },
+      grid: { vertLines: { visible: false }, horzLines: { visible: false } },
+      rightPriceScale: { visible: false },
+      leftPriceScale: { visible: false },
+      timeScale: { visible: false, borderVisible: false },
+      crosshair: { mode: CrosshairMode.Hidden },
+      handleScale: false, handleScroll: false,
+    });
+
+    const line = chart.addLineSeries({
+      color: '#1A1815',         // --ink
+      lineWidth: 1,
+      lineStyle: LineStyle.Solid,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+    line.setData(series as never);
+    chart.timeScale().fitContent();
+
+    const last = series[series.length - 1];
+    function positionPulse() {
+      const x = chart.timeScale().timeToCoordinate(last.time as never);
+      const y = line.priceToCoordinate(last.value);
+      if (x === null || y === null || pulse === null) return;
+      pulse.style.left = String(x) + 'px';
+      pulse.style.top  = String(y) + 'px';
+    }
+    requestAnimationFrame(positionPulse);
+
+    chart.timeScale().subscribeVisibleTimeRangeChange(() => {
+      requestAnimationFrame(positionPulse);
+    });
+
+    const ro = new ResizeObserver(() => {
+      if (!mount.clientWidth) return;
+      chart.applyOptions({ width: mount.clientWidth, height: mount.clientHeight });
+      requestAnimationFrame(positionPulse);
+    });
+    ro.observe(mount);
+  }
+
+  document.querySelectorAll<HTMLDivElement>('.spine-spark').forEach(init);
+</script>

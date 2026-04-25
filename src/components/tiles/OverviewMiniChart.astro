@@ -1,0 +1,281 @@
+---
+// Overview mini chart — lightweight-charts line series with a 5-button
+// TF row. Mock data only in Phase 2; all 5 TF series are pre-computed
+// server-side and shipped inline as a single JSON payload, so TF
+// clicks don't need a fetch.
+//
+// Visual contract:
+//   - Brand red line (--red), 1px
+//   - No axes, no grid, no crosshair markers visible by default
+//   - Hover crosshair: gold (#B8923A), radius 2, dashed --ink-faint guides
+//   - Pulse at last point (same recipe as the spine sparkline, full size)
+//   - 20% trailing right offset = ceil(bars.length * 0.25)
+//   - LWC attribution hidden via attributionLogo:false + CSS
+
+import { buildTfSeries, type TfKey, type TfPoint } from '~/lib/data/mock';
+import type { AssetData } from '~/lib/types/asset';
+
+export interface Props {
+  data: AssetData;
+  moreHref: string;          // path to the Charting tab for this asset
+}
+const { data, moreHref } = Astro.props;
+
+const TFS: readonly TfKey[] = ['1H', '1D', '1W', '1M', '1Y'] as const;
+const DEFAULT_TF: TfKey = '1D';
+
+// Pre-compute every TF so client clicks never hit the network.
+const seriesByTf: Record<TfKey, TfPoint[]> = {
+  '1H': buildTfSeries(data.slug, '1H'),
+  '1D': buildTfSeries(data.slug, '1D'),
+  '1W': buildTfSeries(data.slug, '1W'),
+  '1M': buildTfSeries(data.slug, '1M'),
+  '1Y': buildTfSeries(data.slug, '1Y'),
+};
+const seriesPayload = JSON.stringify(seriesByTf);
+---
+
+<section
+  class="mini-tile"
+  data-default-tf={DEFAULT_TF}
+  data-series={seriesPayload}
+>
+  <header class="tile-eyebrow tf-row">
+    <div class="tf-buttons" role="tablist" aria-label="Chart timeframe">
+      {TFS.map((tf) => (
+        <button
+          type="button"
+          class={`tf-btn${tf === DEFAULT_TF ? ' is-active' : ''}`}
+          data-tf={tf}
+          role="tab"
+          aria-selected={tf === DEFAULT_TF ? 'true' : 'false'}
+        >{tf}</button>
+      ))}
+    </div>
+    <a class="more" href={moreHref}>more →</a>
+  </header>
+
+  <div class="mini-chart-container">
+    <div class="chart-mount" aria-hidden="true"></div>
+    <span class="last-pulse" aria-hidden="true"></span>
+  </div>
+</section>
+
+<style>
+  .mini-tile {
+    background: var(--paper-deep);
+    border-radius: 4px;
+    padding: 18px 20px 14px;
+    box-shadow:
+      inset 0 2px 4px rgba(40,30,18,0.08),
+      inset 0 -1px 0 rgba(255,251,240,0.7);
+    display: flex; flex-direction: column;
+    min-height: 200px;
+  }
+
+  .tile-eyebrow {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 0 0 8px;
+  }
+  .tf-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .tf-buttons { display: flex; align-items: center; gap: 14px; }
+  .tf-btn {
+    background: transparent; border: 0; padding: 0;
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-pale); cursor: pointer;
+    transition: color 100ms var(--ease-out);
+  }
+  .tf-btn:hover { color: var(--ink-mid); }
+  .tf-btn.is-active { color: var(--ink); }
+  .tf-btn:focus-visible { outline: 1px solid var(--red); outline-offset: 2px; }
+
+  .more {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-pale); text-decoration: none;
+    transition: color 100ms var(--ease-out);
+  }
+  .more:hover { color: var(--ink); }
+
+  .mini-chart-container {
+    position: relative;
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 150px;
+  }
+  .chart-mount { position: absolute; inset: 0; }
+
+  /* Hide LWC attribution if it sneaks past attributionLogo:false. */
+  .mini-chart-container :global(.lwc-attribution),
+  .mini-chart-container :global([data-name="trading-view-attribution-logo"]) {
+    display: none !important;
+  }
+
+  /* Last-point pulse — same recipe as the spine, full size. */
+  .last-pulse {
+    position: absolute;
+    top: -100px; left: -100px;
+    width: 8px; height: 8px;
+    background: var(--red);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 5;
+    transform: translate(-50%, -50%);
+    box-shadow:
+      0 0 0 2px rgba(255, 251, 240, 0.6),
+      0 0 10px rgba(200, 51, 30, 0.5);
+  }
+  .last-pulse::before,
+  .last-pulse::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--red);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .last-pulse::before { animation: mini-pulse-ring 1.8s ease-out infinite; }
+  .last-pulse::after  { animation: mini-pulse-ring 1.8s ease-out infinite; animation-delay: 0.9s; }
+  @keyframes mini-pulse-ring {
+    0%   { transform: translate(-50%, -50%) scale(1);   opacity: 0.6; }
+    80%  { opacity: 0; }
+    100% { transform: translate(-50%, -50%) scale(3.5); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .last-pulse::before, .last-pulse::after { animation: none; }
+  }
+
+  @media (max-width: 1100px) {
+    .mini-tile { min-height: 220px; }
+    .mini-chart-container { min-height: 180px; }
+  }
+  @media (max-width: 700px) {
+    .mini-tile { padding: 16px 16px 12px; }
+    .mini-chart-container { min-height: 160px; }
+  }
+</style>
+
+<script>
+  import { createChart, LineStyle, CrosshairMode } from 'lightweight-charts';
+
+  type TfKey = '1H' | '1D' | '1W' | '1M' | '1Y';
+  type Pt = { time: number; value: number };
+
+  function init(root: HTMLElement) {
+    const mount = root.querySelector<HTMLDivElement>('.chart-mount');
+    const pulse = root.querySelector<HTMLSpanElement>('.last-pulse');
+    const buttons = Array.from(
+      root.querySelectorAll<HTMLButtonElement>('.tf-btn'),
+    );
+    const raw = root.dataset.series;
+    const defaultTf = (root.dataset.defaultTf || '1D') as TfKey;
+    if (!mount || !pulse || !raw) return;
+
+    let seriesByTf: Record<TfKey, Pt[]>;
+    try { seriesByTf = JSON.parse(raw) as Record<TfKey, Pt[]>; }
+    catch { return; }
+
+    const chart = createChart(mount, {
+      width: mount.clientWidth || 600,
+      height: mount.clientHeight || 180,
+      layout: {
+        background: { color: 'transparent' },
+        textColor: 'transparent',
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 10,
+        attributionLogo: false,
+      },
+      grid: { vertLines: { visible: false }, horzLines: { visible: false } },
+      rightPriceScale: { visible: false },
+      leftPriceScale: { visible: false },
+      timeScale: { visible: false, borderVisible: false },
+      crosshair: {
+        mode: CrosshairMode.Normal,
+        vertLine: {
+          color: '#D8D2C2',
+          width: 1,
+          style: LineStyle.Dashed,
+          labelVisible: false,
+        },
+        horzLine: {
+          color: '#D8D2C2',
+          width: 1,
+          style: LineStyle.Dashed,
+          labelVisible: false,
+        },
+      },
+      handleScale: false,
+      handleScroll: false,
+    });
+
+    const line = chart.addLineSeries({
+      color: '#C8331E',           // --red
+      lineWidth: 1,
+      lineStyle: LineStyle.Solid,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: true,
+      crosshairMarkerRadius: 2,
+      crosshairMarkerBorderColor: '#B8923A',     // --gold
+      crosshairMarkerBackgroundColor: '#B8923A',
+    });
+
+    let lastPoint: Pt | null = null;
+
+    function setTf(tf: TfKey) {
+      const data = seriesByTf[tf];
+      if (!data || !data.length) return;
+      line.setData(data as never);
+      // 20% trailing room: rightOffset (in bars) = ceil(data.length * 0.25).
+      const rightOffsetBars = Math.ceil(data.length * 0.25);
+      chart.timeScale().applyOptions({ rightOffset: rightOffsetBars });
+      chart.timeScale().fitContent();
+      lastPoint = data[data.length - 1];
+      requestAnimationFrame(positionPulse);
+    }
+
+    function positionPulse() {
+      if (!lastPoint || !pulse) return;
+      const x = chart.timeScale().timeToCoordinate(lastPoint.time as never);
+      const y = line.priceToCoordinate(lastPoint.value);
+      if (x === null || y === null) return;
+      pulse.style.left = String(x) + 'px';
+      pulse.style.top  = String(y) + 'px';
+    }
+
+    setTf(defaultTf);
+
+    chart.timeScale().subscribeVisibleTimeRangeChange(() => {
+      requestAnimationFrame(positionPulse);
+    });
+
+    const ro = new ResizeObserver(() => {
+      if (!mount.clientWidth) return;
+      chart.applyOptions({ width: mount.clientWidth, height: mount.clientHeight });
+      requestAnimationFrame(positionPulse);
+    });
+    ro.observe(mount);
+
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tf = btn.dataset.tf as TfKey | undefined;
+        if (!tf) return;
+        buttons.forEach((b) => {
+          const isActive = b === btn;
+          b.classList.toggle('is-active', isActive);
+          b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        setTf(tf);
+      });
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('.mini-tile').forEach(init);
+</script>

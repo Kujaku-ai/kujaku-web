@@ -1,0 +1,193 @@
+---
+// Performance + Bias — single tile, two zones, hairline divider.
+//
+// Top zone: 4 timeframe % changes (24H · 7D · 30D · 1Y) with red kanji
+//           eyebrow `performance · 動向`.
+// Bottom zone: 3 directional biases (short / mid / long term) with red
+//              kanji eyebrow `bias · 偏向`.
+//
+// The 5-cell `data.structure` is the single source of truth for biases.
+// Overview's 3-cell row maps:
+//   short → structure.short
+//   mid   → structure.month
+//   long  → structure.year
+// Charting (Phase 3) shows all 5.
+
+import type { AssetData, PerfWindow, StructureCell, Direction } from '~/lib/types/asset';
+
+export interface Props { data: AssetData }
+const { data } = Astro.props;
+
+function fmtPct(n: number): string {
+  const sign = n > 0 ? '+' : '';
+  return sign + n.toFixed(2) + '%';
+}
+function fmtAbs(n: number): string {
+  const sign = n > 0 ? '+' : n < 0 ? '−' : '';
+  // No $ prefix here — the perf cell is a per-tf delta, not the price.
+  // Spec leaves the unit informal ("signed dollar / percent").
+  return sign + Math.abs(n).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+function dirGlyph(dir: Direction | undefined): string {
+  if (dir === 'up')   return '↑';
+  if (dir === 'down') return '↓';
+  if (dir === 'side') return '↔';
+  return '→';
+}
+
+const perfCells: Array<{ lab: string; cell: PerfWindow }> = [
+  { lab: '24 hours', cell: data.perf.d24 },
+  { lab: '7 days',   cell: data.perf.d7  },
+  { lab: '30 days',  cell: data.perf.d30 },
+  { lab: '1 year',   cell: data.perf.y1  },
+];
+
+const biasCells: Array<{ lab: string; cell: StructureCell }> = [
+  { lab: 'short term', cell: data.structure.short },
+  { lab: 'mid term',   cell: data.structure.month },
+  { lab: 'long term',  cell: data.structure.year  },
+];
+---
+
+<section class="perf-bias-card">
+  <p class="pb-eyebrow">performance <span class="jp">動向</span></p>
+  <div class="perf-row">
+    {perfCells.map(({ lab, cell }) => (
+      <div class="perf-cell">
+        <p class="lab">{lab}</p>
+        <p class="num">
+          <span class="glyph">{dirGlyph(cell.dir)}</span>
+          {fmtPct(cell.pct)}
+        </p>
+        <p class="meta">{fmtAbs(cell.abs)}</p>
+      </div>
+    ))}
+  </div>
+
+  <hr class="pb-divider" />
+
+  <p class="pb-eyebrow">bias <span class="jp">偏向</span></p>
+  <div class="bias-row">
+    {biasCells.map(({ lab, cell }) => (
+      <div class="bias-cell">
+        <p class="lab">{lab}</p>
+        <p class="bias-line">
+          <span class="glyph">{dirGlyph(cell.dir)}</span>
+          <span class="word">{cell.sentiment}</span>
+        </p>
+        <p class="horizon">{cell.horizon}</p>
+      </div>
+    ))}
+  </div>
+</section>
+
+<style>
+  .perf-bias-card {
+    padding: 22px 28px 24px;
+    background: var(--paper);
+    border-radius: 4px;
+    box-shadow:
+      inset 0 1px 0 rgba(255,251,240,0.7),
+      0 1px 0 rgba(255,251,240,0.5),
+      0 4px 12px rgba(40,30,18,0.05);
+  }
+
+  .pb-eyebrow {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 0 0 14px;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  .pb-eyebrow .jp {
+    font-family: var(--font-jp); font-size: 13px;
+    letter-spacing: 0.04em; text-transform: none;
+    color: var(--red); font-weight: 400;
+  }
+
+  /* Performance row — 4 hairline-divided cells */
+  .perf-row {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    padding-bottom: 22px;
+  }
+  .perf-cell {
+    display: flex; flex-direction: column; gap: 4px;
+    border-left: 1px solid var(--ink-faint);
+    padding-left: 16px;
+  }
+  .perf-cell:first-child { border-left: 0; padding-left: 0; }
+  .perf-cell .lab {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-pale); margin: 0;
+  }
+  .perf-cell .num {
+    font-family: var(--font-mono); font-size: 22px; font-weight: 500;
+    color: var(--ink); margin: 0;
+    font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+  }
+  .perf-cell .num .glyph {
+    font-size: 14px; margin-right: 4px; color: var(--ink-mid);
+  }
+  .perf-cell .meta {
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--ink-pale); margin: 2px 0 0;
+    font-variant-numeric: tabular-nums; letter-spacing: 0.08em;
+  }
+
+  /* Zone divider */
+  .pb-divider {
+    border: 0; border-top: 1px solid var(--ink-faint);
+    margin: 0 0 22px;
+  }
+
+  /* Bias row — 3 hairline-divided cells */
+  .bias-row {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .bias-cell {
+    display: flex; flex-direction: column; gap: 6px;
+    border-left: 1px solid var(--ink-faint);
+    padding-left: 16px;
+  }
+  .bias-cell:first-child { border-left: 0; padding-left: 0; }
+  .bias-cell .lab {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-pale); margin: 0;
+  }
+  .bias-cell .bias-line {
+    display: flex; align-items: baseline; gap: 10px;
+    margin: 0;
+  }
+  .bias-cell .glyph {
+    font-family: var(--font-mono); font-size: 22px; font-weight: 500;
+    color: var(--ink); line-height: 1;
+  }
+  .bias-cell .word {
+    font-family: var(--font-mono); font-size: 17px; font-weight: 500;
+    color: var(--ink); letter-spacing: 0.08em; text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+  }
+  .bias-cell .horizon {
+    font-family: var(--font-mono); font-size: 9px;
+    color: var(--ink-mid); margin: 2px 0 0;
+    letter-spacing: 0.18em; text-transform: uppercase;
+  }
+
+  @media (max-width: 720px) {
+    .perf-bias-card { padding: 20px 22px; }
+    .perf-row { grid-template-columns: repeat(2, 1fr); gap: 18px; row-gap: 18px; }
+    .perf-cell:nth-child(3) { border-left: 0; padding-left: 0; }
+    .bias-row { grid-template-columns: 1fr; gap: 0; }
+    .bias-cell {
+      border-left: 0; padding-left: 0; padding-top: 12px;
+      border-top: 1px solid var(--ink-faint);
+    }
+    .bias-cell:first-child { border-top: 0; padding-top: 0; }
+  }
+</style>

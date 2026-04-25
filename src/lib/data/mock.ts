@@ -452,3 +452,70 @@ const MOCK_DATA: Record<string, AssetData> = {
 export function loadAssetData(slug: string): AssetData | null {
   return MOCK_DATA[slug] ?? null;
 }
+
+// ---------------------------------------------------------------------
+// TF-aware mock series for the Overview mini-chart and (later) the
+// Charting full-chart. Ported from v02-comparisons.html `generateTfBars`
+// — synthesizes a deterministic per-(ticker, tf) walk anchored at the
+// ticker's currentPrice. Independent from `d.bars` (which the spine
+// sparkline reads); the mini-chart is allowed to reshape per TF without
+// pretending to share the same underlying minute history.
+//
+// VISUAL ONLY — Phase 8+ will swap this for real /api/ohlcv/recent
+// fetches keyed by granularity_s.
+// ---------------------------------------------------------------------
+
+export type TfKey = '1H' | '1D' | '1W' | '1M' | '1Y';
+
+export type TfPoint = {
+  time: number;     // unix seconds (LWC time)
+  value: number;    // close
+};
+
+type TfConfig = {
+  count: number;       // number of bars to render
+  spacingS: number;    // seconds between bars (sets the x-axis cadence)
+  volPct: number;      // per-bar volatility relative to anchor price
+};
+
+const TF_CONFIG: Record<TfKey, TfConfig> = {
+  '1H': { count: 60, spacingS: 60,      volPct: 0.0007 },
+  '1D': { count: 24, spacingS: 3600,    volPct: 0.0030 },
+  '1W': { count: 7,  spacingS: 86400,   volPct: 0.0100 },
+  '1M': { count: 30, spacingS: 86400,   volPct: 0.0250 },
+  '1Y': { count: 52, spacingS: 604800,  volPct: 0.1000 },
+};
+
+const ANCHOR_END_TS = Math.floor(
+  Date.parse('2026-04-24T19:22:00Z') / 1000,
+);
+
+export function buildTfSeries(slug: string, tf: TfKey): TfPoint[] {
+  const cfg = TF_CONFIG[tf] ?? TF_CONFIG['1D'];
+  const d = MOCK_DATA[slug];
+  const anchor = d ? d.currentPrice : 100;
+  // Same seed scheme as v02 so the same (slug, tf) pair always paints
+  // the same wiggle.
+  const seed =
+    (slug.charCodeAt(0) * 9301 + tf.charCodeAt(0) * 47 + cfg.count + 1) | 0;
+  const rnd = makeRng(seed);
+
+  // Walk forward from anchor, then place the resulting closes at the
+  // tail of the series so the last bar sits at the anchor end-ts and
+  // the chart "ends now" visually.
+  const closes: number[] = [];
+  let p = anchor;
+  for (let i = 0; i < cfg.count; i++) {
+    closes.push(Math.max(0.01, p));
+    const drift = (rnd() - 0.5) * anchor * cfg.volPct;
+    p = p - drift;
+  }
+  closes.reverse();
+
+  const out: TfPoint[] = new Array(cfg.count);
+  for (let i = 0; i < cfg.count; i++) {
+    const time = ANCHOR_END_TS - (cfg.count - 1 - i) * cfg.spacingS;
+    out[i] = { time, value: round2(closes[i]) };
+  }
+  return out;
+}

@@ -1,0 +1,177 @@
+---
+// Recent activity feed — Overview's preview block. Top 3 chronological
+// items merged from news primaries + features + bot swings + bot
+// hypotheses. Server-rendered; mock data only in Phase 2.
+
+import type { AssetData } from '~/lib/types/asset';
+import { buildFeedItems } from '~/lib/feed/buildFeedItems';
+
+export interface Props {
+  data: AssetData;
+  newsHref: string;          // path to the News tab for "see more"
+  limit?: number;
+}
+const { data, newsHref, limit = 3 } = Astro.props;
+
+const items = buildFeedItems(data).slice(0, limit);
+
+function whenLabel(iso: string): string {
+  const w = new Date(iso);
+  const h = String(w.getUTCHours()).padStart(2, '0');
+  const m = String(w.getUTCMinutes()).padStart(2, '0');
+  // Reference timestamp: pin to the mock anchor day so the feed
+  // doesn't drift relative to wall-clock during dev.
+  const anchor = new Date('2026-04-24T19:22:00Z');
+  const isToday = anchor.toDateString() === w.toDateString();
+  if (isToday) return `${h}:${m}`;
+  return `${w.getUTCDate()} · ${h}:${m}`;
+}
+---
+
+<section class="feed-tile">
+  <header class="tile-eyebrow feed-head">
+    <span>recent activity</span>
+    <a class="more" href={newsHref}>more on news →</a>
+  </header>
+
+  <div class="feed-preview">
+    {items.length === 0 && (
+      <p class="empty">no recent activity</p>
+    )}
+
+    {items.map((i) => (
+      <article class="feed-item">
+        <p class="when">{whenLabel(i.ts)}</p>
+        <div class="body">
+          {i.kind === 'hypothesis' && (
+            <>
+              <span class="kind hypothesis">hypothesis · {i.bucket}</span>
+              <p class="headline">
+                <span class="side">{i.side}</span>{i.headline}
+              </p>
+              <p class="detail">
+                <span class="meta">{Math.round((i.confidence ?? 0) * 100)}% conf</span>
+                {i.detail}
+              </p>
+            </>
+          )}
+          {i.kind === 'swing' && (
+            <>
+              <span class="kind swing">swing</span>
+              <p class="headline">{i.headline}</p>
+              <p class="detail">{i.detail}</p>
+            </>
+          )}
+          {i.kind === 'feature' && (
+            <>
+              <span class="kind feature">feature</span>
+              <p class="headline">{i.headline}</p>
+              <p class="detail"><span class="meta">{i.detail}</span></p>
+            </>
+          )}
+          {i.kind === 'news' && (
+            <>
+              <span class="kind news">news</span>
+              <p class="headline">{i.headline}</p>
+              <p class="detail"><span class="meta">{i.detail}</span></p>
+            </>
+          )}
+        </div>
+      </article>
+    ))}
+  </div>
+</section>
+
+<style>
+  .feed-tile {
+    padding: 22px 28px 18px;
+    background: var(--paper);
+    border-radius: 4px;
+    box-shadow:
+      inset 0 1px 0 rgba(255,251,240,0.7),
+      0 1px 0 rgba(255,251,240,0.5),
+      0 4px 12px rgba(40,30,18,0.05);
+  }
+
+  .feed-head {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--ink-mid);
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin: 0 0 6px;
+  }
+  .feed-head .more {
+    font-family: inherit; font-size: 9px; font-weight: 500;
+    letter-spacing: 0.22em; color: var(--ink-pale);
+    text-decoration: none;
+  }
+  .feed-head .more:hover { color: var(--ink); }
+
+  .empty {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--ink-pale); padding: 16px 0; margin: 0;
+  }
+
+  .feed-item {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--ink-faint);
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 14px;
+  }
+  .feed-item:last-child { border-bottom: 0; }
+
+  .feed-item .when {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .feed-item .body { min-width: 0; }
+
+  .feed-item .kind {
+    display: inline-block;
+    font-family: var(--font-mono); font-size: 9px;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink); margin: 0 0 6px;
+    padding: 2px 6px; border-radius: 2px;
+    background: var(--paper-deep);
+  }
+  .feed-item .kind.news,
+  .feed-item .kind.feature {
+    color: var(--ink-mid); background: transparent;
+    border: 1px solid var(--ink-faint);
+  }
+  .feed-item .kind.hypothesis {
+    color: var(--ink); background: var(--paper-deep); font-weight: 700;
+  }
+
+  .feed-item .headline {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: 15px; color: var(--ink);
+    margin: 0 0 4px; line-height: 1.35;
+  }
+  .feed-item .headline .side {
+    font-family: var(--font-mono); font-style: normal; font-size: 10px;
+    font-weight: 500; letter-spacing: 0.2em; color: var(--ink);
+    margin-right: 8px;
+  }
+  .feed-item .detail {
+    font-family: var(--font-body); font-size: 12.5px; line-height: 1.5;
+    color: var(--ink-soft); margin: 0;
+  }
+  .feed-item .detail .meta {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-mid); margin-right: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 700px) {
+    .feed-tile { padding: 18px 22px 14px; }
+    .feed-item { grid-template-columns: 48px 1fr; gap: 10px; }
+    .feed-item .headline { font-size: 14px; }
+    .feed-item .detail { font-size: 12px; }
+  }
+</style>
