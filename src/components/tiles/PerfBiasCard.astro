@@ -126,7 +126,8 @@ const biasCells: Array<{ lab: string; cell: StructureCell }> = [
   .perf-cell .lab {
     font-family: var(--font-mono); font-size: 9px; font-weight: 500;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-pale); margin: 0;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on --paper. */
+    color: var(--ink-mid); margin: 0;
   }
   .perf-cell .num {
     font-family: var(--font-mono); font-size: 22px; font-weight: 500;
@@ -138,7 +139,8 @@ const biasCells: Array<{ lab: string; cell: StructureCell }> = [
   }
   .perf-cell .meta {
     font-family: var(--font-mono); font-size: 10px;
-    color: var(--ink-pale); margin: 2px 0 0;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on --paper. */
+    color: var(--ink-mid); margin: 2px 0 0;
     font-variant-numeric: tabular-nums; letter-spacing: 0.08em;
   }
 
@@ -162,7 +164,8 @@ const biasCells: Array<{ lab: string; cell: StructureCell }> = [
   .bias-cell .lab {
     font-family: var(--font-mono); font-size: 9px; font-weight: 500;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-pale); margin: 0;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on --paper. */
+    color: var(--ink-mid); margin: 0;
   }
   .bias-cell .bias-line {
     display: flex; align-items: baseline; gap: 10px;

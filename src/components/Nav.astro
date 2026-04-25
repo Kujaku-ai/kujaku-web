@@ -68,7 +68,9 @@ const { user } = Astro.props;
     flex: 0 0 32px; width: 32px; height: 32px; align-self: center;
     margin-left: 16px;
     background: transparent; border: 1px solid var(--ink-faint); border-radius: 2px;
-    font-family: var(--font-mono); font-size: 16px; color: var(--ink-pale);
+    /* a11y: promoted from --ink-pale for sub-18px contrast on the
+       masthead bg. */
+    font-family: var(--font-mono); font-size: 16px; color: var(--ink-mid);
     cursor: pointer; padding: 0;
     transition: color 180ms var(--ease-out), border-color 180ms var(--ease-out);
   }

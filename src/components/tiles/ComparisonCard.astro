@@ -143,7 +143,8 @@ const c = comparison;
   .cm-meta {
     font-family: var(--font-mono); font-size: 10px; font-weight: 500;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-pale); margin: 0;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on --paper. */
+    color: var(--ink-mid); margin: 0;
     font-variant-numeric: tabular-nums;
   }
 
@@ -180,6 +181,9 @@ const c = comparison;
   }
   .cm-vs-divider {
     font-family: var(--font-display); font-style: italic; font-weight: 400;
+    /* Decorative italic divider — kept --ink-pale intentionally. The
+       element is aria-hidden and serves as an editorial spacer
+       between the two sides; faintness is the design intent. */
     font-size: 16px; color: var(--ink-pale);
     letter-spacing: 0.04em;
   }
@@ -206,7 +210,8 @@ const c = comparison;
   .cm-metric-trend {
     font-family: var(--font-mono); font-size: 10px; font-weight: 500;
     letter-spacing: 0.18em; text-transform: uppercase;
-    color: var(--ink-pale); font-variant-numeric: tabular-nums;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on --paper. */
+    color: var(--ink-mid); font-variant-numeric: tabular-nums;
     text-align: right;
   }
 
@@ -237,7 +242,8 @@ const c = comparison;
   .cm-byline {
     font-family: var(--font-mono); font-size: 10px; font-weight: 500;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-pale); margin: 0;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on --paper. */
+    color: var(--ink-mid); margin: 0;
   }
 
   /* Dark CTA. is-pressable: paper-coal bg, paper text, deboss inset

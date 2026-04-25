@@ -37,15 +37,21 @@ const { sectorName, fullName, stamp } = Astro.props;
   .crumb {
     font-family: var(--font-mono); font-size: 10px;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-mid); margin: 0;
+    /* a11y: promoted from --ink-mid for sub-18px contrast on
+       --paper-deep (the binder bg behind the masthead). */
+    color: var(--ink-soft); margin: 0;
     display: inline-flex; align-items: baseline; gap: 0;
   }
   .crumb .seg { display: inline; }
+  /* `.sep` (slash separators) stays --ink-faint — purely decorative
+     punctuation between segments. */
   .crumb .sep { color: var(--ink-faint); }
   .stamp {
     font-family: var(--font-mono); font-size: 10px;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-pale); margin: 0;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on
+       --paper-deep (the binder bg behind the masthead). */
+    color: var(--ink-soft); margin: 0;
     font-variant-numeric: tabular-nums;
   }
 

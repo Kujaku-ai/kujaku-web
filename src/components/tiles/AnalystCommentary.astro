@@ -158,7 +158,10 @@ const a = data.analyst;
   }
   .observations li::before {
     content: '→';
-    font-family: var(--font-mono); color: var(--ink-pale);
+    /* a11y: promoted from --ink-pale for sub-18px contrast on --paper.
+       The arrow is content-adjacent (a list-bullet substitute), so it
+       earns the same readability as the body text. */
+    font-family: var(--font-mono); color: var(--ink-mid);
     position: absolute; left: 0; top: 1px;
   }
 

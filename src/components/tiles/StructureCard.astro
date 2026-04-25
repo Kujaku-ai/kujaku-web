@@ -80,7 +80,8 @@ const cells: Array<{ lab: string; cell: StructureCell }> = [
   .cell .lab {
     font-family: var(--font-mono); font-size: 9px; font-weight: 500;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-pale); margin: 0;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on --paper. */
+    color: var(--ink-mid); margin: 0;
   }
   .cell .bias-line {
     display: flex; align-items: baseline; gap: 10px;

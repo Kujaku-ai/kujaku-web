@@ -78,7 +78,9 @@ const seriesPayload = JSON.stringify(seriesByTf);
   .tile-eyebrow {
     font-family: var(--font-mono); font-size: 9px; font-weight: 500;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-mid); margin: 0 0 8px;
+    /* a11y: promoted from --ink-mid for sub-18px contrast on
+       --paper-deep (the mini-tile bg). */
+    color: var(--ink-soft); margin: 0 0 8px;
   }
   .tf-row {
     display: flex; align-items: center; justify-content: space-between;
@@ -89,17 +91,23 @@ const seriesPayload = JSON.stringify(seriesByTf);
     background: transparent; border: 0; padding: 0;
     font-family: var(--font-mono); font-size: 10px; font-weight: 500;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-pale); cursor: pointer;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on
+       --paper-deep (mini-tile bg). Idle ink-soft, hover ink, active
+       ink — hover and active flatten to the same step but the
+       interaction signal is preserved via the transition. */
+    color: var(--ink-soft); cursor: pointer;
     transition: color 100ms var(--ease-out);
   }
-  .tf-btn:hover { color: var(--ink-mid); }
+  .tf-btn:hover { color: var(--ink); }
   .tf-btn.is-active { color: var(--ink); }
   .tf-btn:focus-visible { outline: 1px solid var(--red); outline-offset: 2px; }
 
   .more {
     font-family: var(--font-mono); font-size: 9px; font-weight: 500;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-pale); text-decoration: none;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on
+       --paper-deep (mini-tile bg). */
+    color: var(--ink-soft); text-decoration: none;
     transition: color 100ms var(--ease-out);
   }
   .more:hover { color: var(--ink); }
