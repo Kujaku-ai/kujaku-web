@@ -1,0 +1,135 @@
+---
+// News primary tile. Single source per article. Server-rendered.
+// Apply .is-hoverable for the reading affordance (lift + red headline).
+//
+// Sort metadata is mirrored as data-attrs on the root <article> so the
+// section-level sort island can re-order without re-rendering.
+
+import type { NewsPrimary } from '~/lib/types/asset';
+
+export interface Props {
+  item: NewsPrimary;
+  isLead?: boolean;          // first 2 in section get the larger headline
+}
+const { item, isLead = false } = Astro.props;
+
+function fmtTs(iso: string): string {
+  const d = new Date(iso);
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const day = d.getUTCDate();
+  const mon = months[d.getUTCMonth()];
+  const h = String(d.getUTCHours()).padStart(2, '0');
+  const m = String(d.getUTCMinutes()).padStart(2, '0');
+  return `${day} ${mon} · ${h}:${m}`;
+}
+function fmtCount(n: number): string {
+  if (n < 1000) return String(n);
+  if (n < 10000) return (n / 1000).toFixed(1) + 'k';
+  return Math.round(n / 1000) + 'k';
+}
+
+const likes = item.likes ?? 0;
+const popularity = item.popularity ?? 0;
+const tsMs = Date.parse(item.ts);
+---
+
+<article
+  class={`news-article is-hoverable${isLead ? ' is-lead' : ''}`}
+  data-ts={tsMs}
+  data-likes={likes}
+  data-popularity={popularity}
+>
+  <header class="eyebrow">
+    <span class="source">{item.source.toUpperCase()}</span>
+    <span class="ts">{fmtTs(item.ts)}</span>
+  </header>
+
+  <h3 class="headline">{item.headline}</h3>
+
+  <p class="excerpt">{item.excerpt}</p>
+
+  <footer class="metrics">
+    <span class="metric" aria-label={`${likes} likes`}>
+      <svg class="icon" viewBox="0 0 24 24" width="12" height="12" fill="none"
+           stroke="currentColor" stroke-width="1.5"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+      </svg>
+      <span class="num">{fmtCount(likes)}</span>
+    </span>
+    <span class="metric" aria-label={`${popularity} reads`}>
+      <svg class="icon" viewBox="0 0 24 24" width="12" height="12" fill="none"
+           stroke="currentColor" stroke-width="1.5"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+      <span class="num">{fmtCount(popularity)}</span>
+    </span>
+  </footer>
+</article>
+
+<style>
+  .news-article {
+    background: var(--paper);
+    border-radius: 4px;
+    padding: 18px 20px 16px;
+    box-shadow:
+      inset 0 1px 0 rgba(255,251,240,0.7),
+      0 1px 0 rgba(255,251,240,0.5),
+      0 4px 12px rgba(40,30,18,0.05);
+    display: flex; flex-direction: column;
+    min-height: 200px;
+  }
+
+  .eyebrow {
+    display: flex; flex-wrap: nowrap; align-items: baseline;
+    justify-content: space-between; gap: 12px;
+    margin: 0 0 10px;
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+  }
+  .eyebrow .source { color: var(--ink); white-space: nowrap; }
+  .eyebrow .ts {
+    color: var(--ink-mid); white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .headline {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: 17px; line-height: 1.25; color: var(--ink);
+    margin: 0 0 10px; letter-spacing: -0.005em;
+  }
+  .news-article.is-lead .headline { font-size: 20px; line-height: 1.2; }
+
+  .excerpt {
+    font-family: var(--font-body); font-size: 13px; line-height: 1.55;
+    color: var(--ink-soft); margin: 0;
+  }
+
+  .metrics {
+    /* Pin the metrics row to the bottom of the tile so a tile of
+       any height (lead vs regular, varying excerpt length) reads
+       with consistent footer placement. */
+    margin-top: auto;
+    padding-top: 14px;
+    display: flex; align-items: center; gap: 18px;
+    color: var(--ink);
+  }
+  .metric {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--ink); font-variant-numeric: tabular-nums;
+  }
+  .metric .icon {
+    flex: 0 0 12px;
+    color: var(--ink-mid);
+  }
+
+  @media (max-width: 700px) {
+    .news-article { min-height: 0; padding: 16px 18px 14px; }
+    .news-article.is-lead .headline { font-size: 18px; }
+    .headline { font-size: 16px; }
+  }
+</style>
