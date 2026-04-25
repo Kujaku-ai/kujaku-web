@@ -1,0 +1,61 @@
+---
+// Page-level masthead — the in-content crumb row above the tab rail.
+// NOT the global app masthead (that's Nav.astro's `.nav-masthead` with
+// the ticker marquee).
+//
+// Layout matches v02-comparisons.html crumb-row: slash-prefixed crumb
+// on the left, source stamp on the right, hairline below.
+
+import type { AssetTab } from '~/lib/types/asset';
+
+export interface Props {
+  sectorName: string;
+  fullName: string;
+  activeTab: AssetTab;
+  stamp: string;       // e.g. '24 APR · 18:55 UTC · COINBASE · BTC-USD'
+}
+
+const { sectorName, fullName, activeTab, stamp } = Astro.props;
+---
+
+<div class="crumb-row">
+  <p class="crumb">
+    <span class="seg">/SECTORS</span>
+    <span class="sep">/</span>
+    <span class="seg">{sectorName.toUpperCase()}</span>
+    <span class="sep">/</span>
+    <span class="seg">{fullName.toUpperCase()}</span>
+    <span class="sep">/</span>
+    <span class="seg active-page">{activeTab.toUpperCase()}</span>
+  </p>
+  <p class="stamp">{stamp}</p>
+</div>
+
+<style>
+  .crumb-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding-bottom: 14px; margin: 0 0 18px;
+    border-bottom: 1px solid var(--ink-faint);
+    flex-wrap: wrap; gap: 12px 24px;
+  }
+  .crumb {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 0;
+    display: inline-flex; align-items: baseline; gap: 0;
+  }
+  .crumb .seg { display: inline; }
+  .crumb .sep { color: var(--ink-faint); }
+  .crumb .active-page { color: var(--ink); font-weight: 500; }
+  .stamp {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-pale); margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 700px) {
+    .crumb { font-size: 9px; letter-spacing: 0.18em; }
+    .stamp { font-size: 9px; letter-spacing: 0.18em; }
+  }
+</style>
