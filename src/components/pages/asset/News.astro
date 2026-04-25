@@ -1,43 +1,299 @@
 ---
+// News tab — two stacked sections (primaries · 主要 + features · 特集),
+// each with its own modular grid + per-section sort buttons.
+//
+// LAYOUT GOTCHA (per spec): the mount is a plain block container. Each
+// SECTION owns its own .modular-grid. Putting the grid class on the
+// mount makes the two sections become grid items and render side-by-
+// side instead of stacking — v02 had this bug.
+//
+// Sort interaction: client island re-sorts existing tile DOM nodes
+// in place (no client-side render). Sort key persists per (ticker,
+// section) in sessionStorage.
+
 import type { AssetData } from '~/lib/types/asset';
+import NewsArticle from '~/components/tiles/NewsArticle.astro';
+import NewsFeature from '~/components/tiles/NewsFeature.astro';
 
 export interface Props { data: AssetData }
 const { data } = Astro.props;
+
+const primaries = data.news.primaries;
+const features = data.news.features;
+const totalCount = primaries.length + features.length;
+
+const SORT_KEYS = [
+  { key: 'recent',  label: 'most recent'  },
+  { key: 'popular', label: 'most popular' },
+  { key: 'liked',   label: 'most liked'   },
+] as const;
+
+const ticker = data.slug;
 ---
 
-<section class="phase1-stub">
-  <p class="eyebrow">phase 5 · news</p>
-  <h2 class="title">News — {data.fullName}</h2>
-  <p class="body">
-    Two stacked sections (primaries · 主要 + features · 特集), each with
-    its own sort-button strip (most recent / popular / liked) and modular
-    grid of article + feature tiles. Sources mocked until scraper service
-    ships. {data.news.primaries.length} primaries · {data.news.features.length} features queued.
-  </p>
+<section class="news-page" data-ticker={ticker}>
+  <header class="page-head">
+    <h2 class="page-title">News · {data.fullName}</h2>
+    <p class="page-meta">
+      {totalCount} items · {primaries.length} primary · {features.length} feature
+    </p>
+  </header>
+
+  <!-- Mount holds two sections that STACK. NOT a grid — sections own
+       their own .modular-grid one level deeper. -->
+  <div class="news-mount">
+    <section class="news-section" data-section="primaries">
+      <header class="section-head">
+        <p class="section-eyebrow">primaries <span class="jp">主要</span></p>
+        <div class="sort-buttons" role="tablist" aria-label="Sort primaries">
+          {SORT_KEYS.map(({ key, label }) => (
+            <button
+              type="button"
+              class={`sort-btn${key === 'recent' ? ' is-active' : ''}`}
+              data-sort={key}
+              role="tab"
+              aria-selected={key === 'recent' ? 'true' : 'false'}
+            >{label}</button>
+          ))}
+        </div>
+      </header>
+
+      {primaries.length === 0 ? (
+        <p class="empty">no primaries yet</p>
+      ) : (
+        <div class="modular-grid">
+          {primaries.map((item, i) => (
+            <NewsArticle item={item} isLead={i < 2} />
+          ))}
+        </div>
+      )}
+    </section>
+
+    <section class="news-section" data-section="features">
+      <header class="section-head">
+        <p class="section-eyebrow">features <span class="jp">特集</span></p>
+        <div class="sort-buttons" role="tablist" aria-label="Sort features">
+          {SORT_KEYS.map(({ key, label }) => (
+            <button
+              type="button"
+              class={`sort-btn${key === 'recent' ? ' is-active' : ''}`}
+              data-sort={key}
+              role="tab"
+              aria-selected={key === 'recent' ? 'true' : 'false'}
+            >{label}</button>
+          ))}
+        </div>
+      </header>
+
+      {features.length === 0 ? (
+        <p class="empty">no features yet</p>
+      ) : (
+        <div class="modular-grid">
+          {features.map((item, i) => (
+            <NewsFeature item={item} isLead={i < 2} />
+          ))}
+        </div>
+      )}
+    </section>
+  </div>
 </section>
 
 <style>
-  .phase1-stub {
-    padding: 36px 32px 40px;
-    background: var(--paper);
-    border-radius: 4px;
-    box-shadow:
-      inset 0 1px 0 rgba(255,251,240,0.7),
-      0 1px 0 rgba(255,251,240,0.5),
-      0 4px 12px rgba(40,30,18,0.05);
+  .news-page {
+    display: flex; flex-direction: column;
+    gap: 22px;
   }
-  .eyebrow {
-    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
-    letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--red); margin: 0 0 14px;
+
+  .page-head {
+    display: flex; flex-wrap: wrap; align-items: baseline;
+    justify-content: space-between; gap: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--ink-faint);
   }
-  .title {
+  .page-title {
     font-family: var(--font-display); font-style: italic; font-weight: 400;
     font-size: 28px; line-height: 1.1; letter-spacing: -0.01em;
-    color: var(--ink); margin: 0 0 14px;
+    color: var(--ink); margin: 0;
   }
-  .body {
-    font-family: var(--font-body); font-size: 14px; line-height: 1.6;
-    color: var(--ink-mid); margin: 0; max-width: 64ch;
+  .page-meta {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Plain block container — sections stack. */
+  .news-mount {
+    display: flex; flex-direction: column;
+    gap: 28px;
+  }
+
+  .news-section {
+    display: flex; flex-direction: column;
+    gap: 14px;
+  }
+
+  .section-head {
+    display: flex; flex-wrap: wrap; align-items: baseline;
+    justify-content: space-between; gap: 12px;
+  }
+  .section-eyebrow {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 0;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  .section-eyebrow .jp {
+    font-family: var(--font-jp); font-size: 14px;
+    letter-spacing: 0.04em; text-transform: none;
+    color: var(--red); font-weight: 400;
+  }
+
+  .sort-buttons {
+    display: flex; align-items: center; gap: 14px;
+    flex-wrap: wrap;
+  }
+  .sort-btn {
+    background: transparent; border: 0; padding: 0;
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.18em; text-transform: lowercase;
+    color: var(--ink-pale); cursor: pointer;
+    transition: color 100ms var(--ease-out);
+  }
+  .sort-btn:hover { color: var(--ink-mid); }
+  .sort-btn.is-active { color: var(--ink); }
+  .sort-btn:focus-visible { outline: 1px solid var(--red); outline-offset: 2px; }
+
+  .empty {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-pale); margin: 0; padding: 28px 0;
+  }
+
+  /* Modular grid — 6-col with lead tiles spanning 3 and regular
+     tiles spanning 2. ≤700 px collapses to a single column, lead
+     vs regular distinction goes away. */
+  .modular-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .modular-grid > :global(.news-article),
+  .modular-grid > :global(.news-feature) {
+    grid-column: span 2;
+  }
+  .modular-grid > :global(.news-article.is-lead),
+  .modular-grid > :global(.news-feature.is-lead) {
+    grid-column: span 3;
+  }
+
+  @media (max-width: 1100px) {
+    .modular-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .modular-grid > :global(.news-article),
+    .modular-grid > :global(.news-feature) { grid-column: span 1; }
+    .modular-grid > :global(.news-article.is-lead),
+    .modular-grid > :global(.news-feature.is-lead) { grid-column: span 2; }
+  }
+  @media (max-width: 700px) {
+    .modular-grid { grid-template-columns: 1fr; gap: 12px; }
+    .modular-grid > :global(.news-article),
+    .modular-grid > :global(.news-feature),
+    .modular-grid > :global(.news-article.is-lead),
+    .modular-grid > :global(.news-feature.is-lead) { grid-column: 1 / -1; }
+    .news-page { gap: 16px; }
+    .news-mount { gap: 22px; }
+    .page-title { font-size: 22px; }
   }
 </style>
+
+<script>
+  /* Sort island.
+   *
+   * - Reads sessionStorage on hydrate to restore the saved sort key
+   *   per (ticker, section). Default = 'recent'.
+   * - Click handler is delegated on the section header so it survives
+   *   any future re-renders of either children list.
+   * - Sort itself reorders existing DOM nodes via appendChild — no
+   *   client-side rendering, no data shipped beyond the data-attrs
+   *   each tile already carries (data-ts, data-likes, data-popularity).
+   */
+  type SortKey = 'recent' | 'popular' | 'liked';
+
+  function sortKeyOf(el: Element): SortKey {
+    const v = (el as HTMLElement).dataset.sort;
+    return v === 'popular' || v === 'liked' ? v : 'recent';
+  }
+
+  function applySort(grid: HTMLElement, key: SortKey) {
+    const items = Array.from(
+      grid.querySelectorAll<HTMLElement>('.news-article, .news-feature'),
+    );
+    items.sort((a, b) => {
+      if (key === 'popular') {
+        return Number(b.dataset.popularity || 0) - Number(a.dataset.popularity || 0);
+      }
+      if (key === 'liked') {
+        return Number(b.dataset.likes || 0) - Number(a.dataset.likes || 0);
+      }
+      return Number(b.dataset.ts || 0) - Number(a.dataset.ts || 0);
+    });
+    // Re-append in new order. Lead-tile sizing (.is-lead) was set at
+    // SSR by editorial recency and is intentionally NOT updated when
+    // the user re-sorts — lead is an editorial decision, not a sort
+    // artifact.
+    for (const it of items) grid.appendChild(it);
+  }
+
+  function init() {
+    const page = document.querySelector<HTMLElement>('.news-page');
+    if (!page) return;
+    const ticker = page.dataset.ticker || 'unknown';
+
+    page.querySelectorAll<HTMLElement>('.news-section').forEach((section) => {
+      const sectionName = section.dataset.section || '';
+      const grid = section.querySelector<HTMLElement>('.modular-grid');
+      const buttons = Array.from(
+        section.querySelectorAll<HTMLButtonElement>('.sort-btn'),
+      );
+      if (!grid || !buttons.length) return;
+
+      const storageKey = `kujaku.news.sort.${ticker}.${sectionName}`;
+      let saved: SortKey = 'recent';
+      try {
+        const v = sessionStorage.getItem(storageKey);
+        if (v === 'popular' || v === 'liked' || v === 'recent') saved = v;
+      } catch { /* sessionStorage unavailable; fall through */ }
+
+      // Restore visual + grid order if saved isn't the SSR default.
+      if (saved !== 'recent') {
+        buttons.forEach((b) => {
+          const isActive = b.dataset.sort === saved;
+          b.classList.toggle('is-active', isActive);
+          b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        applySort(grid, saved);
+      }
+
+      // Event-delegated click handler on the section header so it
+      // survives any future re-render of the buttons themselves.
+      const head = section.querySelector<HTMLElement>('.section-head');
+      head?.addEventListener('click', (ev) => {
+        const target = ev.target as HTMLElement;
+        const btn = target.closest<HTMLButtonElement>('.sort-btn');
+        if (!btn) return;
+        const next = sortKeyOf(btn);
+        const live = buttons.find((b) => b.classList.contains('is-active'));
+        if (live && sortKeyOf(live) === next) return;
+        buttons.forEach((b) => {
+          const isActive = b === btn;
+          b.classList.toggle('is-active', isActive);
+          b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        applySort(grid, next);
+        try { sessionStorage.setItem(storageKey, next); } catch { /* no-op */ }
+      });
+    });
+  }
+
+  init();
+</script>

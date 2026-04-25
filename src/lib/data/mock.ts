@@ -479,6 +479,30 @@ const MOCK_DATA: Record<string, AssetData> = {
   },
 };
 
+// Augment news items with deterministic likes/popularity. Same hash
+// scheme as v02-comparisons.html's augmentNewsForSort IIFE — derives
+// from the headline char codes so the same article always gets the
+// same numbers across reloads. Ranges: likes 12–192, popularity
+// 250–4750. Phase 5 mounts these into the metrics footer; Phase 8+
+// will swap to real engagement counts when the scraper service ships.
+//
+// Runs once at module load. Safe to call repeatedly because we only
+// fill fields that are still undefined.
+(function augmentNewsForSort() {
+  for (const slug of Object.keys(MOCK_DATA)) {
+    const n = MOCK_DATA[slug].news;
+    if (!n) continue;
+    const all = [...n.primaries, ...n.features];
+    all.forEach((a, i) => {
+      const headline = a.headline || '';
+      let h = i * 13;
+      for (let c = 0; c < headline.length; c++) h += headline.charCodeAt(c);
+      if (a.likes === undefined)      a.likes      = (h * 3  % 180)  + 12;
+      if (a.popularity === undefined) a.popularity = (h * 17 % 4500) + 250;
+    });
+  }
+})();
+
 export function loadAssetData(slug: string): AssetData | null {
   return MOCK_DATA[slug] ?? null;
 }
