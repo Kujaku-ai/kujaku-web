@@ -146,7 +146,10 @@ function whenLabel(iso: string): string {
     color: var(--ink-mid); background: transparent;
     border: 1px solid var(--ink-faint);
   }
-  .feed-item .kind.hypothesis {
+  /* swings + hypotheses share the bot-emitted .kind family — same
+     paper-deep treatment. */
+  .feed-item .kind.hypothesis,
+  .feed-item .kind.swing {
     color: var(--ink); background: var(--paper-deep); font-weight: 700;
   }
 

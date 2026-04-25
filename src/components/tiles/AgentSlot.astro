@@ -28,7 +28,7 @@ const { variant, fullName } = Astro.props;
       analyst plugs into this ticker as a separate node with its own
       portfolio, win rate, and decision feed.
     </p>
-    <button type="button" class="as-cta" data-action="propose">+ propose an analyst</button>
+    <button type="button" class="as-cta is-outline-cta" data-action="propose">+ propose an analyst</button>
   </aside>
 ) : (
   <aside class="agent-slot is-empty">
@@ -75,28 +75,9 @@ const { variant, fullName } = Astro.props;
     max-width: 48ch;
   }
 
-  /* Outline button — same vocabulary as the comparison slot's CTA.
-     border --ink → on hover, fill (bg --ink, color --paper). */
-  .as-cta {
-    margin-top: 8px;
-    display: inline-flex; align-items: center;
-    padding: 10px 22px;
-    background: transparent;
-    border: 1px solid var(--ink);
-    border-radius: 2px;
-    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
-    letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink);
-    cursor: pointer;
-    transition: background 180ms var(--ease-out),
-                color 180ms var(--ease-out);
-  }
-  .as-cta:hover {
-    background: var(--ink); color: var(--paper);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .as-cta { transition: none; }
-  }
+  /* Outline-button vocabulary lives in .is-outline-cta (utilities.css).
+     This rule only owns the slot-internal positioning. */
+  .as-cta { margin-top: 8px; }
 
   @media (max-width: 700px) {
     .agent-slot { padding: 28px 22px 30px; }
