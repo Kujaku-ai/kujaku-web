@@ -519,3 +519,53 @@ export function buildTfSeries(slug: string, tf: TfKey): TfPoint[] {
   }
   return out;
 }
+
+// ---------------------------------------------------------------------
+// Candle-mode bars for the Charting full-chart. Derives OHLC from the
+// same per-(slug, tf) deterministic walk that buildTfSeries uses, so
+// flipping LINE↔CANDLE keeps the chart visually coherent (the candle
+// closes trace the same line). For each close, opens are pinned to
+// the previous close and high/low are jittered around max/min(open,
+// close) by a fraction of the per-tf volatility.
+// ---------------------------------------------------------------------
+
+export type TfBar = {
+  time: number;     // unix seconds
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+};
+
+export function buildTfBars(slug: string, tf: TfKey): TfBar[] {
+  const cfg = TF_CONFIG[tf] ?? TF_CONFIG['1D'];
+  const points = buildTfSeries(slug, tf);
+  const d = MOCK_DATA[slug];
+  const anchor = d ? d.currentPrice : 100;
+  // Independent seed (offset +9001) so the wick jitter doesn't reuse
+  // RNG state from the line walk.
+  const seed =
+    (slug.charCodeAt(0) * 9301 + tf.charCodeAt(0) * 47 + cfg.count + 9001) | 0;
+  const rnd = makeRng(seed);
+  const wickAmp = anchor * cfg.volPct * 0.4;     // wicks are smaller than the bar move
+  const out: TfBar[] = new Array(points.length);
+  for (let i = 0; i < points.length; i++) {
+    const close = points[i].value;
+    const open = i === 0 ? close : points[i - 1].value;
+    const top = Math.max(open, close);
+    const bot = Math.min(open, close);
+    const high = top + rnd() * wickAmp;
+    const low  = Math.max(0.01, bot - rnd() * wickAmp);
+    const volume = Math.round(80 + rnd() * 1600);
+    out[i] = {
+      time: points[i].time,
+      open: round2(open),
+      high: round2(high),
+      low:  round2(low),
+      close: round2(close),
+      volume,
+    };
+  }
+  return out;
+}
