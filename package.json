@@ -14,7 +14,8 @@
   "dependencies": {
     "@astrojs/node": "8.3.4",
     "astro": "4.16.18",
-    "bcryptjs": "2.4.3"
+    "bcryptjs": "2.4.3",
+    "lightweight-charts": "^4.2.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "2.4.6"
