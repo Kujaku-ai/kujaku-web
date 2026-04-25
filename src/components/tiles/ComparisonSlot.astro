@@ -1,0 +1,118 @@
+---
+// Sunken build-your-own slot for the Comparisons tab. Always renders
+// at the END of the page (even when comparisons are present —
+// matches v02 behavior, encourages adding more).
+//
+// Same visual primitive as AgentSlot (paper-deep bg, dashed border,
+// centered content) but the copy is comparison-specific. Kept as a
+// sibling rather than a shared base — the body description differs
+// in tone from AgentSlot and would be awkward to parameterize.
+//
+// The "+ start a comparison" button alerts a placeholder for now.
+// Phase 8+ will wire a real comparison-builder UX (form to pick a
+// target ticker, kickoff agentic synthesis, show "report incoming"
+// state).
+
+export interface Props {
+  fullName: string;            // 'Bitcoin' — interpolated into body copy
+}
+const { fullName } = Astro.props;
+---
+
+<aside class="comparison-slot">
+  <p class="cs-eyebrow">
+    add comparison <span class="jp">作成</span>
+  </p>
+  <h3 class="cs-title">Build your own comparison</h3>
+  <p class="cs-body">
+    Compare {fullName} against any tracked asset. Kujaku will generate
+    a daily agentic report and refresh it each morning.
+  </p>
+  <button type="button" class="cs-cta" data-action="start-comparison">
+    + start a comparison
+  </button>
+</aside>
+
+<style>
+  .comparison-slot {
+    background: var(--paper-deep);
+    border: 1px dashed var(--ink-faint);
+    border-radius: 4px;
+    padding: 36px 26px 38px;
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center; gap: 12px;
+    box-shadow: inset 0 1px 2px rgba(40,30,18,0.04);
+  }
+
+  /* Eyebrow: mono "add comparison" + red Mincho kanji 作成 (sakusei =
+     "creation"). The .jp span shifts to the JP font + red color and
+     drops the surrounding text-transform/letter-spacing. */
+  .cs-eyebrow {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 0;
+    display: inline-flex; align-items: baseline; gap: 10px;
+  }
+  .cs-eyebrow .jp {
+    font-family: var(--font-jp); font-size: 13px;
+    letter-spacing: 0.04em; text-transform: none;
+    color: var(--red); font-weight: 400;
+  }
+
+  .cs-title {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: 22px; line-height: 1.2; letter-spacing: -0.01em;
+    color: var(--ink); margin: 0;
+  }
+
+  .cs-body {
+    font-family: var(--font-body); font-size: 13px; line-height: 1.55;
+    color: var(--ink-mid); margin: 0;
+    max-width: 52ch;
+  }
+
+  /* Outline button — same vocabulary as AgentSlot's "+ propose an
+     analyst". border --ink → on hover, fill (bg --ink, color --paper). */
+  .cs-cta {
+    margin-top: 6px;
+    display: inline-flex; align-items: center;
+    padding: 10px 22px;
+    background: transparent;
+    border: 1px solid var(--ink);
+    border-radius: 2px;
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 180ms var(--ease-out),
+                color 180ms var(--ease-out);
+  }
+  .cs-cta:hover {
+    background: var(--ink); color: var(--paper);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cs-cta { transition: none; }
+  }
+
+  @media (max-width: 700px) {
+    .comparison-slot { padding: 28px 22px 30px; }
+    .cs-title { font-size: 19px; }
+  }
+</style>
+
+<script>
+  // TODO Phase 8+: real comparison-builder flow (form → POST to
+  // synthesis service → "report incoming" state). For Phase 6 this
+  // is a placeholder alert, same UX as AgentSlot's "+ propose an
+  // analyst" button.
+  document
+    .querySelectorAll<HTMLButtonElement>('.cs-cta[data-action="start-comparison"]')
+    .forEach((btn) => {
+      btn.addEventListener('click', () => {
+        alert(
+          'TODO — comparison-builder UI lands in a future phase. ' +
+          'For now, ping the architect with the asset pair you have in mind.',
+        );
+      });
+    });
+</script>
