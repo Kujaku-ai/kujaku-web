@@ -72,7 +72,9 @@ const metaLine = comps.length > 0
   .page-meta {
     font-family: var(--font-mono); font-size: 10px; font-weight: 500;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-mid); margin: 0;
+    /* a11y: promoted from --ink-mid for sub-18px contrast on
+       --paper-deep (page bg). */
+    color: var(--ink-soft); margin: 0;
     font-variant-numeric: tabular-nums;
   }
 
@@ -84,7 +86,9 @@ const metaLine = comps.length > 0
   .cm-empty {
     font-family: var(--font-mono); font-size: 10px; font-weight: 500;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-pale); margin: 0;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on
+       --paper-deep (page bg). */
+    color: var(--ink-soft); margin: 0;
     padding: 32px 0; text-align: center;
   }
 

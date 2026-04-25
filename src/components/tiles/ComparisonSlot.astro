@@ -28,7 +28,7 @@ const { fullName } = Astro.props;
     Compare {fullName} against any tracked asset. Kujaku will generate
     a daily agentic report and refresh it each morning.
   </p>
-  <button type="button" class="cs-cta" data-action="start-comparison">
+  <button type="button" class="cs-cta is-outline-cta" data-action="start-comparison">
     + start a comparison
   </button>
 </aside>
@@ -50,7 +50,9 @@ const { fullName } = Astro.props;
   .cs-eyebrow {
     font-family: var(--font-mono); font-size: 10px; font-weight: 500;
     letter-spacing: 0.28em; text-transform: uppercase;
-    color: var(--ink-mid); margin: 0;
+    /* a11y: promoted from --ink-mid for sub-18px contrast on
+       --paper-deep (slot bg). */
+    color: var(--ink-soft); margin: 0;
     display: inline-flex; align-items: baseline; gap: 10px;
   }
   .cs-eyebrow .jp {
@@ -67,32 +69,15 @@ const { fullName } = Astro.props;
 
   .cs-body {
     font-family: var(--font-body); font-size: 13px; line-height: 1.55;
-    color: var(--ink-mid); margin: 0;
+    /* a11y: promoted from --ink-mid for sub-18px contrast on
+       --paper-deep (slot bg). */
+    color: var(--ink-soft); margin: 0;
     max-width: 52ch;
   }
 
-  /* Outline button — same vocabulary as AgentSlot's "+ propose an
-     analyst". border --ink → on hover, fill (bg --ink, color --paper). */
-  .cs-cta {
-    margin-top: 6px;
-    display: inline-flex; align-items: center;
-    padding: 10px 22px;
-    background: transparent;
-    border: 1px solid var(--ink);
-    border-radius: 2px;
-    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
-    letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink);
-    cursor: pointer;
-    transition: background 180ms var(--ease-out),
-                color 180ms var(--ease-out);
-  }
-  .cs-cta:hover {
-    background: var(--ink); color: var(--paper);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .cs-cta { transition: none; }
-  }
+  /* Outline-button vocabulary lives in .is-outline-cta (utilities.css).
+     This rule only owns the slot-internal positioning. */
+  .cs-cta { margin-top: 6px; }
 
   @media (max-width: 700px) {
     .comparison-slot { padding: 28px 22px 30px; }

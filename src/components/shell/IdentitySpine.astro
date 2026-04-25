@@ -46,7 +46,10 @@ const sparkSeries: TfPoint[] = bars.slice(-30).map((b) => ({
 <aside class="spine" aria-label="ticker identity">
   <div class="spine-head">
     <p class="spine-sector">{sector.toUpperCase()}</p>
-    <p class="spine-name">{fullName}</p>
+    {/* Page-level h1 lives here at ≥1100px. AssetPage adds a
+        visually-hidden h1 fallback so the asset name is announced
+        on mobile too (the spine itself is display:none below 1100). */}
+    <h1 class="spine-name">{fullName}</h1>
     <p class="spine-sym">{symbol}</p>
   </div>
   <div class="spine-status">
@@ -58,7 +61,7 @@ const sparkSeries: TfPoint[] = bars.slice(-30).map((b) => ({
   </div>
   <div class="spine-sparkline">
     <p class="sp-label">intraday · 30 bar</p>
-    <SpineSparkline series={sparkSeries} />
+    <SpineSparkline series={sparkSeries} symbol={symbol} />
   </div>
   <p class="spine-foot">kujaku.ai</p>
 </aside>
@@ -86,7 +89,8 @@ const sparkSeries: TfPoint[] = bars.slice(-30).map((b) => ({
   .spine-sector {
     font-family: var(--font-mono); font-size: 9px; font-weight: 500;
     letter-spacing: 0.28em; text-transform: uppercase;
-    color: var(--ink-pale); margin: 0;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on --paper. */
+    color: var(--ink-mid); margin: 0;
   }
   .spine-name {
     font-family: var(--font-display); font-style: italic; font-weight: 300;
@@ -123,14 +127,16 @@ const sparkSeries: TfPoint[] = bars.slice(-30).map((b) => ({
   .spine-sparkline .sp-label {
     font-family: var(--font-mono); font-size: 9px;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-pale); margin: 0;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on --paper. */
+    color: var(--ink-mid); margin: 0;
   }
 
   .spine-foot {
     margin: auto 0 0;
     font-family: var(--font-mono); font-size: 9px;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-pale);
+    /* a11y: promoted from --ink-pale for sub-18px contrast on --paper. */
+    color: var(--ink-mid);
   }
 
   @media (max-width: 1100px) {

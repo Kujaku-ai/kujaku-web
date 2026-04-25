@@ -32,9 +32,9 @@ function fmtPrice(n: number): string {
 function glyphOf(dir: Direction): string {
   return dir === 'up' ? '↑' : dir === 'down' ? '↓' : '→';
 }
-function fmtPerf(pct: number, dir: Direction): string {
+function fmtPctText(pct: number): string {
   const sign = pct > 0 ? '+' : '';
-  return `${glyphOf(dir)} ${sign}${pct.toFixed(2)}% / 24h`;
+  return `${sign}${pct.toFixed(2)}% / 24h`;
 }
 
 function fmtRefreshed(iso: string): string {
@@ -63,14 +63,22 @@ const c = comparison;
       <p class="cm-vs-symbol">{selfSymbol}</p>
       <p class="cm-vs-name">{selfName}</p>
       <p class="cm-vs-price">{fmtPrice(selfPrice)}</p>
-      <p class="cm-vs-perf">{fmtPerf(c.selfPerfPct, c.selfPerfDir)}</p>
+      <p class="cm-vs-perf">
+        {/* Glyph is aria-hidden — the signed pct that follows
+            encodes direction in the accessible name. */}
+        <span aria-hidden="true">{glyphOf(c.selfPerfDir)} </span>
+        {fmtPctText(c.selfPerfPct)}
+      </p>
     </div>
     <div class="cm-vs-divider" aria-hidden="true">vs</div>
     <div class="cm-vs-side cm-other">
       <p class="cm-vs-symbol">{c.vsSymbol}</p>
       <p class="cm-vs-name">{c.vsName}</p>
       <p class="cm-vs-price">{c.vsPrice}</p>
-      <p class="cm-vs-perf">{fmtPerf(c.vsPerfPct, c.vsPerfDir)}</p>
+      <p class="cm-vs-perf">
+        <span aria-hidden="true">{glyphOf(c.vsPerfDir)} </span>
+        {fmtPctText(c.vsPerfPct)}
+      </p>
     </div>
   </div>
 
@@ -104,7 +112,8 @@ const c = comparison;
   .comparison-card {
     background: var(--paper);
     border-radius: 4px;
-    padding: 22px 26px 24px;
+    /* Editorial-card canonical padding (22 28 24). */
+    padding: 22px 28px 24px;
     box-shadow:
       inset 0 1px 0 rgba(255,251,240,0.7),
       0 1px 0 rgba(255,251,240,0.5),
@@ -135,12 +144,18 @@ const c = comparison;
   .cm-meta {
     font-family: var(--font-mono); font-size: 10px; font-weight: 500;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-pale); margin: 0;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on --paper. */
+    color: var(--ink-mid); margin: 0;
     font-variant-numeric: tabular-nums;
   }
 
   /* Vs hero — 3-col grid. Self left, italic "vs" centered, other right
-     (right-aligned). */
+     (right-aligned).
+     TODO Phase 7.5+: at <480px the 3-col layout becomes tight (each
+     side ~150px). Architect deferred stacking until visual
+     confirmation on a real phone. If text clipping shows up, drop
+     the row to a single column at that breakpoint and hide the
+     "vs" divider. */
   .cm-vs-row {
     display: grid; grid-template-columns: 1fr auto 1fr;
     align-items: center; gap: 18px;
@@ -172,6 +187,9 @@ const c = comparison;
   }
   .cm-vs-divider {
     font-family: var(--font-display); font-style: italic; font-weight: 400;
+    /* Decorative italic divider — kept --ink-pale intentionally. The
+       element is aria-hidden and serves as an editorial spacer
+       between the two sides; faintness is the design intent. */
     font-size: 16px; color: var(--ink-pale);
     letter-spacing: 0.04em;
   }
@@ -198,7 +216,8 @@ const c = comparison;
   .cm-metric-trend {
     font-family: var(--font-mono); font-size: 10px; font-weight: 500;
     letter-spacing: 0.18em; text-transform: uppercase;
-    color: var(--ink-pale); font-variant-numeric: tabular-nums;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on --paper. */
+    color: var(--ink-mid); font-variant-numeric: tabular-nums;
     text-align: right;
   }
 
@@ -229,44 +248,19 @@ const c = comparison;
   .cm-byline {
     font-family: var(--font-mono); font-size: 10px; font-weight: 500;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-pale); margin: 0;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on --paper. */
+    color: var(--ink-mid); margin: 0;
   }
 
-  /* Dark CTA. is-pressable: paper-coal bg, paper text, deboss inset
-     shadow on hover, 1px translateY on :active. Same vocabulary as
-     the AgentCard CTA. */
-  .cm-cta.is-pressable {
-    display: inline-flex; align-items: center; gap: 10px;
-    padding: 12px 20px;
-    background: var(--paper-coal); color: var(--paper);
-    border-radius: 2px;
-    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
-    letter-spacing: 0.28em; text-transform: uppercase;
-    text-decoration: none; cursor: pointer;
-    box-shadow:
-      inset 0 1px 0 rgba(255,251,240,0.10),
-      0 2px 6px rgba(40,30,18,0.10),
-      0 8px 18px rgba(40,30,18,0.06);
-    transition: box-shadow 180ms var(--ease-out),
-                transform 180ms var(--ease-out);
-  }
-  .cm-cta.is-pressable:hover {
-    box-shadow:
-      inset 0 2px 6px rgba(0,0,0,0.30),
-      inset 0 -1px 0 rgba(255,251,240,0.08);
-  }
-  .cm-cta.is-pressable:active { transform: translateY(1px); }
+  /* CTA arrow ornament — vocabulary lives in .is-pressable
+     (utilities.css). */
   .cm-cta .arrow { font-family: var(--font-mono); font-size: 12px; }
-  @media (prefers-reduced-motion: reduce) {
-    .cm-cta.is-pressable { transition: none; }
-    .cm-cta.is-pressable:active { transform: none; }
-  }
 
   /* Mobile: drop the cm-metric to a single column (label / value /
      trend stack), shrink hero symbol + title. Vs hero stays 3-col
      so the "vs" divider keeps its meaning. */
   @media (max-width: 700px) {
-    .comparison-card { padding: 18px 18px 20px; gap: 16px; }
+    .comparison-card { padding: 20px 22px; gap: 16px; }
     .cm-vs-symbol { font-size: 26px; }
     .cm-vs-row { gap: 12px; }
     .cm-title { font-size: 19px; }

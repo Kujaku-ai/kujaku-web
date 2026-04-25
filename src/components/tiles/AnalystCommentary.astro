@@ -42,7 +42,9 @@ const a = data.analyst;
   {a ? (
     <>
       <p class="date-header">{fmtDateRangeHeader(a.rangeLabel, a.reportTs)}</p>
-      <h2 class="title">{a.title}</h2>
+      {/* Card-level heading — h3 to fit the spec hierarchy
+          (h1 page → h2 tab → h3 card). */}
+      <h3 class="title">{a.title}</h3>
 
       <div class="body">
         {a.body.map((para) => <p>{para}</p>)}
@@ -90,7 +92,8 @@ const a = data.analyst;
 
 <style>
   .commentary-card {
-    padding: 22px 28px 26px;
+    /* Editorial-card canonical padding (22 28 24). */
+    padding: 22px 28px 24px;
     background: var(--paper);
     border-radius: 4px;
     box-shadow:
@@ -156,7 +159,10 @@ const a = data.analyst;
   }
   .observations li::before {
     content: '→';
-    font-family: var(--font-mono); color: var(--ink-pale);
+    /* a11y: promoted from --ink-pale for sub-18px contrast on --paper.
+       The arrow is content-adjacent (a list-bullet substitute), so it
+       earns the same readability as the body text. */
+    font-family: var(--font-mono); color: var(--ink-mid);
     position: absolute; left: 0; top: 1px;
   }
 

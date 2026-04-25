@@ -1,5 +1,5 @@
 // Charting calculations API client — charting-calculations-production.up.railway.app.
-// TODO Phase 3+: replace mock returns with real fetch() per overlay endpoint.
+// TODO Phase 8+: replace mock returns with real fetch() per overlay endpoint.
 // Spec: ASSETPAGE_BUILD_SPEC.md → Data Sources.
 
 import type { Overlays, Structure } from '~/lib/types/asset';

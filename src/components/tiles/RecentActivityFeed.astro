@@ -84,7 +84,8 @@ function whenLabel(iso: string): string {
 
 <style>
   .feed-tile {
-    padding: 22px 28px 18px;
+    /* Editorial-card canonical padding (22 28 24). */
+    padding: 22px 28px 24px;
     background: var(--paper);
     border-radius: 4px;
     box-shadow:
@@ -102,7 +103,8 @@ function whenLabel(iso: string): string {
   }
   .feed-head .more {
     font-family: inherit; font-size: 9px; font-weight: 500;
-    letter-spacing: 0.22em; color: var(--ink-pale);
+    /* a11y: promoted from --ink-pale for sub-18px contrast on --paper. */
+    letter-spacing: 0.22em; color: var(--ink-mid);
     text-decoration: none;
   }
   .feed-head .more:hover { color: var(--ink); }
@@ -110,7 +112,8 @@ function whenLabel(iso: string): string {
   .empty {
     font-family: var(--font-mono); font-size: 10px;
     letter-spacing: 0.2em; text-transform: uppercase;
-    color: var(--ink-pale); padding: 16px 0; margin: 0;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on --paper. */
+    color: var(--ink-mid); padding: 16px 0; margin: 0;
   }
 
   .feed-item {
@@ -143,7 +146,10 @@ function whenLabel(iso: string): string {
     color: var(--ink-mid); background: transparent;
     border: 1px solid var(--ink-faint);
   }
-  .feed-item .kind.hypothesis {
+  /* swings + hypotheses share the bot-emitted .kind family — same
+     paper-deep treatment. */
+  .feed-item .kind.hypothesis,
+  .feed-item .kind.swing {
     color: var(--ink); background: var(--paper-deep); font-weight: 700;
   }
 
@@ -169,7 +175,7 @@ function whenLabel(iso: string): string {
   }
 
   @media (max-width: 700px) {
-    .feed-tile { padding: 18px 22px 14px; }
+    .feed-tile { padding: 20px 22px; }
     .feed-item { grid-template-columns: 48px 1fr; gap: 10px; }
     .feed-item .headline { font-size: 14px; }
     .feed-item .detail { font-size: 12px; }

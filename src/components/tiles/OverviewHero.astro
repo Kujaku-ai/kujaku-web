@@ -37,17 +37,23 @@ const dc = data.dailyChange;
 
 <section class="hero-tile">
   <div class="hero-id">
-    <h1 class="full-name">{data.fullName}</h1>
+    {/* Page-level h1 lives in the IdentitySpine (or the AssetPage
+        mobile fallback). The hero's full-name is an h2 — the most
+        prominent heading in the tab content but not the page h1. */}
+    <h2 class="full-name">{data.fullName}</h2>
     <p class="ticker-sym">{data.symbol}</p>
   </div>
   <div class="hero-num">
     <p class="price">${fmtPrice(data.currentPrice)}</p>
     <p class="change">
-      <span class="glyph">{dirGlyph(dc.direction)}</span>
+      {/* Direction glyph is presentational — the signed % + abs
+          following it already encode direction in the accessible
+          name, so the glyph is aria-hidden. */}
+      <span class="glyph" aria-hidden="true">{dirGlyph(dc.direction)}</span>
       <span>{fmtPct(dc.pct)}</span>
-      <span class="dot">·</span>
+      <span class="dot" aria-hidden="true">·</span>
       <span>{fmtAbs(dc.abs)}</span>
-      <span class="dot">·</span>
+      <span class="dot" aria-hidden="true">·</span>
       <span>24H</span>
     </p>
   </div>

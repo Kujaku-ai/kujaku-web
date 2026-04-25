@@ -32,7 +32,9 @@ const cells: Array<{ lab: string; cell: StructureCell }> = [
       <div class="cell">
         <p class="lab">{lab}</p>
         <p class="bias-line">
-          <span class="glyph">{dirGlyph(cell.dir)}</span>
+          {/* Glyph is aria-hidden — the sentiment word carries
+              direction in the accessible name. */}
+          <span class="glyph" aria-hidden="true">{dirGlyph(cell.dir)}</span>
           <span class="word">{cell.sentiment}</span>
         </p>
         <p class="horizon">{cell.horizon}</p>
@@ -78,7 +80,8 @@ const cells: Array<{ lab: string; cell: StructureCell }> = [
   .cell .lab {
     font-family: var(--font-mono); font-size: 9px; font-weight: 500;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-pale); margin: 0;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on --paper. */
+    color: var(--ink-mid); margin: 0;
   }
   .cell .bias-line {
     display: flex; align-items: baseline; gap: 10px;

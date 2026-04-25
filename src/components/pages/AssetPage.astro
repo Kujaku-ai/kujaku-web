@@ -64,6 +64,13 @@ const TAB_LABELS: Record<AssetTab, string> = {
     />
 
     <main class="content">
+      {/* Mobile h1 fallback. The spine carries the canonical h1 at
+          ≥1100px; below that the spine is display:none and its h1 is
+          gone from the accessibility tree, so we expose this one
+          there. The CSS toggles whichever is active by viewport so
+          screen readers see exactly one h1 either way. */}
+      <h1 class="mobile-h1-fallback">{data.fullName}</h1>
+
       <Masthead
         sectorName={sector.name}
         fullName={data.fullName}
@@ -118,6 +125,22 @@ const TAB_LABELS: Record<AssetTab, string> = {
     padding: 28px 32px 64px;
     min-width: 0;
     background: var(--paper-deep);
+  }
+
+  /* Mobile h1 fallback. Visually-hidden at <1100px (where the spine
+     h1 disappears with the spine itself), display:none at ≥1100px
+     (so we don't double up on h1s when the spine is visible). */
+  .mobile-h1-fallback {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  @media (min-width: 1101px) {
+    .mobile-h1-fallback { display: none; }
   }
 
   .stale-banner {

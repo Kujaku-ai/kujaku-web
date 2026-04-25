@@ -41,6 +41,7 @@ const seriesPayload = JSON.stringify(seriesByTf);
   class="mini-tile"
   data-default-tf={DEFAULT_TF}
   data-series={seriesPayload}
+  aria-label={`${data.symbol} price chart`}
 >
   <header class="tile-eyebrow tf-row">
     <div class="tf-buttons" role="tablist" aria-label="Chart timeframe">
@@ -67,6 +68,7 @@ const seriesPayload = JSON.stringify(seriesByTf);
   .mini-tile {
     background: var(--paper-deep);
     border-radius: 4px;
+    /* Compact-tile canonical padding (18 20 14). */
     padding: 18px 20px 14px;
     box-shadow:
       inset 0 2px 4px rgba(40,30,18,0.08),
@@ -78,7 +80,9 @@ const seriesPayload = JSON.stringify(seriesByTf);
   .tile-eyebrow {
     font-family: var(--font-mono); font-size: 9px; font-weight: 500;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-mid); margin: 0 0 8px;
+    /* a11y: promoted from --ink-mid for sub-18px contrast on
+       --paper-deep (the mini-tile bg). */
+    color: var(--ink-soft); margin: 0 0 8px;
   }
   .tf-row {
     display: flex; align-items: center; justify-content: space-between;
@@ -89,17 +93,23 @@ const seriesPayload = JSON.stringify(seriesByTf);
     background: transparent; border: 0; padding: 0;
     font-family: var(--font-mono); font-size: 10px; font-weight: 500;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-pale); cursor: pointer;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on
+       --paper-deep (mini-tile bg). Idle ink-soft, hover ink, active
+       ink — hover and active flatten to the same step but the
+       interaction signal is preserved via the transition. */
+    color: var(--ink-soft); cursor: pointer;
     transition: color 100ms var(--ease-out);
   }
-  .tf-btn:hover { color: var(--ink-mid); }
+  .tf-btn:hover { color: var(--ink); }
   .tf-btn.is-active { color: var(--ink); }
   .tf-btn:focus-visible { outline: 1px solid var(--red); outline-offset: 2px; }
 
   .more {
     font-family: var(--font-mono); font-size: 9px; font-weight: 500;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--ink-pale); text-decoration: none;
+    /* a11y: promoted from --ink-pale for sub-18px contrast on
+       --paper-deep (mini-tile bg). */
+    color: var(--ink-soft); text-decoration: none;
     transition: color 100ms var(--ease-out);
   }
   .more:hover { color: var(--ink); }
@@ -159,7 +169,7 @@ const seriesPayload = JSON.stringify(seriesByTf);
     .mini-chart-container { min-height: 180px; }
   }
   @media (max-width: 700px) {
-    .mini-tile { padding: 16px 16px 12px; }
+    .mini-tile { padding: 16px 18px; }
     .mini-chart-container { min-height: 160px; }
   }
 </style>

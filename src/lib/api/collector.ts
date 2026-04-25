@@ -1,5 +1,5 @@
 // Collector API client — data-{sector}.kujaku.ai per-sector services.
-// TODO Phase 2: replace mock with fetch() to real endpoints.
+// TODO Phase 8+: replace mock with fetch() to real endpoints.
 // See ASSETPAGE_BUILD_SPEC.md → "Data Sources / API Plumbing".
 
 import type { Bar } from '~/lib/types/asset';

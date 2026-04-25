@@ -11,16 +11,51 @@ export interface Props { data: AssetData }
 const { data } = Astro.props;
 ---
 
-<div class="charting-stack">
-  <FullChart data={data} />
+<section class="charting-page">
+  {/* Tab-level page header — h2 + mono meta line, same vocabulary as
+      News/Agents/Comparisons. The kanji 図表 (zuhyō, "chart") fits
+      the section as a charting analysis page. */}
+  <header class="page-head">
+    <h2 class="page-title">Charting · {data.fullName}</h2>
+    <p class="page-meta">図表 · price · structure · agentic commentary</p>
+  </header>
 
-  <div class="below-grid">
-    <StructureCard data={data} />
-    <AnalystCommentary data={data} />
+  <div class="charting-stack">
+    <FullChart data={data} />
+
+    <div class="below-grid">
+      <StructureCard data={data} />
+      <AnalystCommentary data={data} />
+    </div>
   </div>
-</div>
+</section>
 
 <style>
+  .charting-page {
+    display: flex; flex-direction: column;
+    gap: 22px;
+  }
+
+  .page-head {
+    display: flex; flex-wrap: wrap; align-items: baseline;
+    justify-content: space-between; gap: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--ink-faint);
+  }
+  .page-title {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: 28px; line-height: 1.1; letter-spacing: -0.01em;
+    color: var(--ink); margin: 0;
+  }
+  .page-meta {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    /* a11y: promoted from --ink-mid for sub-18px contrast on
+       --paper-deep (page bg). */
+    color: var(--ink-soft); margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
   .charting-stack {
     display: flex; flex-direction: column; gap: 18px;
   }
@@ -36,6 +71,8 @@ const { data } = Astro.props;
     .below-grid { grid-template-columns: 1fr; gap: 16px; }
   }
   @media (max-width: 700px) {
+    .charting-page { gap: 18px; }
+    .page-title { font-size: 22px; }
     .charting-stack { gap: 14px; }
     .below-grid { gap: 14px; }
   }

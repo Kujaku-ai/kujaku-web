@@ -6,6 +6,97 @@
  * gets promoted to the vendor recipes. Anything app-specific stays.
  * --------------------------------------------------------------- */
 
+/* Default focus-visible — red 1px outline, 2px offset. Brand-locked
+ * focus indicator. Applied via :where() so component-level rules
+ * trump it without specificity wars; component overrides only
+ * needed when the default offset clips against a tight container.
+ *
+ * Uses :where() with a permissive selector list so any anchor,
+ * button, or interactive [tabindex] picks up the indicator. */
+:where(a, button, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 1px solid var(--red);
+  outline-offset: 2px;
+}
+
+/* .visually-hidden — strip from visual flow but keep in the
+ * accessibility tree. Use for sr-only labels (e.g. direction words
+ * adjacent to glyph icons) and shell-level h1 fallbacks for routes
+ * where the spine is hidden by viewport. Standard pattern from the
+ * inclusive-components canon. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* CTA recipes — hoisted from per-component definitions in Phase 7
+ * after auditing AgentCard.ac-cta + ComparisonCard.cm-cta (identical
+ * dark CTA) and AgentSlot.as-cta + ComparisonSlot.cs-cta (identical
+ * outline button). Apply alongside the component class:
+ *   <a class="ac-cta is-pressable">    — dark filled CTA
+ *   <button class="cs-cta is-outline-cta"> — outline transparent CTA
+ *
+ * .is-pressable: paper-coal background, paper text, deboss inset
+ * shadow on hover, 1px translateY on :active. The CTA's parent
+ * component owns layout (padding, margin, alignment) — the utility
+ * only owns the button vocabulary itself.
+ *
+ * .is-outline-cta: transparent → filled-on-hover. border 1px solid
+ * --ink, on hover bg --ink color --paper. Used on slot CTAs ("+
+ * propose an analyst", "+ start a comparison").
+ */
+.is-pressable {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 12px 20px;
+  background: var(--paper-coal); color: var(--paper);
+  border: 0; border-radius: 2px;
+  font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.28em; text-transform: uppercase;
+  text-decoration: none; cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255,251,240,0.10),
+    0 2px 6px rgba(40,30,18,0.10),
+    0 8px 18px rgba(40,30,18,0.06);
+  transition: box-shadow 180ms var(--ease-out),
+              transform 180ms var(--ease-out);
+}
+.is-pressable:hover {
+  box-shadow:
+    inset 0 2px 6px rgba(0,0,0,0.30),
+    inset 0 -1px 0 rgba(255,251,240,0.08);
+}
+.is-pressable:active { transform: translateY(1px); }
+@media (prefers-reduced-motion: reduce) {
+  .is-pressable { transition: none; }
+  .is-pressable:active { transform: none; }
+}
+
+.is-outline-cta {
+  display: inline-flex; align-items: center;
+  padding: 10px 22px;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  cursor: pointer;
+  transition: background 180ms var(--ease-out),
+              color 180ms var(--ease-out);
+}
+.is-outline-cta:hover {
+  background: var(--ink); color: var(--paper);
+}
+@media (prefers-reduced-motion: reduce) {
+  .is-outline-cta { transition: none; }
+}
+
 /* .is-hoverable — paper-lift on hover. Used on tiles that aren't
  * clickable buttons themselves but want a reading affordance.
  *

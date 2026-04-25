@@ -8,3 +8,6 @@ sandbox/*
 !sandbox/botleaf-15min/
 .DS_Store
 .astro/
+# Architect-shipped reference HTML — kept locally for layout audits,
+# never committed. Drop here so `git add -A` doesn't sweep it up.
+v02-comparisons.html
