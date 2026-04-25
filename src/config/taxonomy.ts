@@ -31,6 +31,13 @@ export const sectors: Record<string, Sector> = {
     status: 'live',
     fallbackTo: null,
   },
+  qc: {
+    slug: 'qc',
+    name: 'Quantum Computing',
+    tagline: 'public-market quantum hardware names',
+    status: 'live',
+    fallbackTo: null,
+  },
 };
 
 export const assets: Record<string, Asset> = {
@@ -44,8 +51,44 @@ export const assets: Record<string, Asset> = {
       data: 'https://data-btc.kujaku.ai/api',
       bot: 'https://kalshi15min-btc.kujaku.ai/api',
     },
-    panels: ['chart', 'bot', 'trades'],
-    status: 'stub',
+    panels: ['overview', 'charting', 'agents', 'news', 'comparisons'],
+    status: 'live',
+  },
+  rgti: {
+    slug: 'rgti',
+    name: 'RGTI',
+    fullName: 'Rigetti Computing',
+    canonicalSector: 'qc',
+    aliases: ['rigetti'],
+    api: {
+      data: 'https://data-qc.kujaku.ai/api',
+    },
+    panels: ['overview', 'charting', 'agents', 'news', 'comparisons'],
+    status: 'live',
+  },
+  ionq: {
+    slug: 'ionq',
+    name: 'IONQ',
+    fullName: 'IonQ',
+    canonicalSector: 'qc',
+    aliases: ['ionq'],
+    api: {
+      data: 'https://data-qc.kujaku.ai/api',
+    },
+    panels: ['overview', 'charting', 'agents', 'news', 'comparisons'],
+    status: 'live',
+  },
+  qbts: {
+    slug: 'qbts',
+    name: 'QBTS',
+    fullName: 'D-Wave Quantum',
+    canonicalSector: 'qc',
+    aliases: ['d-wave', 'dwave'],
+    api: {
+      data: 'https://data-qc.kujaku.ai/api',
+    },
+    panels: ['overview', 'charting', 'agents', 'news', 'comparisons'],
+    status: 'live',
   },
 };
 
