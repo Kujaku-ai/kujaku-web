@@ -56,7 +56,11 @@ const TAB_LABELS: Record<AssetTab, string> = {
     border-radius: 2px;
     font-family: var(--font-mono); font-size: 10px; font-weight: 500;
     letter-spacing: 0.2em; text-transform: uppercase;
-    color: var(--ink-mid);
+    /* a11y: promoted from --ink-mid (4.0 contrast on --paper, fails
+       AA at sub-18px) to --ink-soft (8.1). Phase 7's contrast pass
+       missed this case because the rule was framed as "ink-pale →
+       ink-mid"; ink-mid was already the start state here. */
+    color: var(--ink-soft);
     cursor: pointer;
     text-align: center;
     text-decoration: none;
