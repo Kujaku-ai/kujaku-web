@@ -150,7 +150,12 @@ const c = comparison;
   }
 
   /* Vs hero — 3-col grid. Self left, italic "vs" centered, other right
-     (right-aligned). */
+     (right-aligned).
+     TODO Phase 7.5+: at <480px the 3-col layout becomes tight (each
+     side ~150px). Architect deferred stacking until visual
+     confirmation on a real phone. If text clipping shows up, drop
+     the row to a single column at that breakpoint and hide the
+     "vs" divider. */
   .cm-vs-row {
     display: grid; grid-template-columns: 1fr auto 1fr;
     align-items: center; gap: 18px;

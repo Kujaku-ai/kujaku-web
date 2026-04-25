@@ -1,5 +1,5 @@
 // Bot API client — kalshi15min-btc.kujaku.ai (and any future bot services).
-// TODO Phase 4: replace mock returns with real fetch().
+// TODO Phase 8+: replace mock returns with real fetch().
 //
 // CRITICAL: /api/decisions returns context_json (~1.2 MB/row, the full
 // prompt sent to Claude per decision). This client MUST strip that field
