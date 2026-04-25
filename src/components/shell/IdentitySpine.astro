@@ -61,7 +61,7 @@ const sparkSeries: TfPoint[] = bars.slice(-30).map((b) => ({
   </div>
   <div class="spine-sparkline">
     <p class="sp-label">intraday · 30 bar</p>
-    <SpineSparkline series={sparkSeries} />
+    <SpineSparkline series={sparkSeries} symbol={symbol} />
   </div>
   <p class="spine-foot">kujaku.ai</p>
 </aside>

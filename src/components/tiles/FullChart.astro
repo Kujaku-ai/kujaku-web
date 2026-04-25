@@ -47,6 +47,7 @@ const payload = JSON.stringify({ line: lineByTf, candle: barsByTf });
   class="full-chart-tile"
   data-default-tf={DEFAULT_TF}
   data-payload={payload}
+  aria-label={`${data.symbol} price chart, ${DEFAULT_TF} timeframe`}
 >
   <header class="tile-eyebrow tf-row">
     <div class="tf-buttons" role="tablist" aria-label="Chart timeframe">
@@ -77,19 +78,21 @@ const payload = JSON.stringify({ line: lineByTf, candle: barsByTf });
     <span class="cc-divider" aria-hidden="true"></span>
 
     {/* Overlay pills — visual-only in Phase 3.
+        Each is a toggle button: aria-pressed reflects the .is-active
+        class so SR users hear "pressed" on the enabled overlays.
         TODO Phase 8+: wire to charting-calculations API per overlay type
         (liquidity / fvg / structure / orderblocks). */}
     <div class="overlay-group" role="group" aria-label="Overlays">
-      <button type="button" data-overlay="liquidity">
+      <button type="button" data-overlay="liquidity" aria-pressed="false">
         <span class="dot" aria-hidden="true"></span>liquidity
       </button>
-      <button type="button" data-overlay="fvg">
+      <button type="button" data-overlay="fvg" aria-pressed="false">
         <span class="dot" aria-hidden="true"></span>fair value gap
       </button>
-      <button type="button" data-overlay="structure">
+      <button type="button" data-overlay="structure" aria-pressed="false">
         <span class="dot" aria-hidden="true"></span>structure
       </button>
-      <button type="button" data-overlay="orderblocks">
+      <button type="button" data-overlay="orderblocks" aria-pressed="false">
         <span class="dot" aria-hidden="true"></span>order blocks
       </button>
     </div>
@@ -409,6 +412,13 @@ const payload = JSON.stringify({ line: lineByTf, candle: barsByTf });
           b.classList.toggle('is-active', isActive);
           b.setAttribute('aria-selected', isActive ? 'true' : 'false');
         });
+        // Update the section's aria-label to reflect the current TF
+        // so SR re-querying the chart sees the live timeframe.
+        const symbol = root.getAttribute('aria-label')?.split(' ')[0] || '';
+        root.setAttribute(
+          'aria-label',
+          `${symbol} price chart, ${tf} timeframe`,
+        );
         render();
       });
     });
@@ -427,13 +437,15 @@ const payload = JSON.stringify({ line: lineByTf, candle: barsByTf });
       });
     });
 
-    // Overlay pills — Phase 3 visual-only. Toggle .is-active locally;
-    // do NOT call any overlay-rendering function.
+    // Overlay pills — Phase 3 visual-only. Toggle .is-active and the
+    // matching aria-pressed so SR users hear pressed/not-pressed.
     // TODO Phase 8+: wire to charting-calculations API per overlay type
     //                (liquidity / fvg / structure / orderblocks).
     overlayButtons.forEach((btn) => {
       btn.addEventListener('click', () => {
-        btn.classList.toggle('is-active');
+        const next = !btn.classList.contains('is-active');
+        btn.classList.toggle('is-active', next);
+        btn.setAttribute('aria-pressed', next ? 'true' : 'false');
       });
     });
   }

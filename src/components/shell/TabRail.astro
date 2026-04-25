@@ -23,13 +23,18 @@ const TAB_LABELS: Record<AssetTab, string> = {
 };
 ---
 
-<nav class="tab-bar" role="tablist" aria-label="binder pages">
+<nav class="tab-bar" aria-label="binder pages">
+  {/* Plain anchor nav, NOT role="tablist" — the tabs trigger full
+      route navigation (server re-renders the tab content), not in-
+      page tab-panel switching. ARIA tablist semantics expect
+      arrow-key navigation between tabs, which would conflict with
+      anchor-default Tab cycling. aria-current="page" carries the
+      "active" state instead of aria-selected. */}
   {ASSET_TABS.map((tab) => (
     <a
       href={`/${sectorSlug}/${assetSlug}/${tab}`}
       class={tab === activeTab ? 'is-active' : ''}
-      role="tab"
-      aria-selected={tab === activeTab ? 'true' : 'false'}
+      aria-current={tab === activeTab ? 'page' : undefined}
       data-page={tab}
     >{TAB_LABELS[tab]}</a>
   ))}

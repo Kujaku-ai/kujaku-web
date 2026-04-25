@@ -41,6 +41,7 @@ const seriesPayload = JSON.stringify(seriesByTf);
   class="mini-tile"
   data-default-tf={DEFAULT_TF}
   data-series={seriesPayload}
+  aria-label={`${data.symbol} price chart`}
 >
   <header class="tile-eyebrow tf-row">
     <div class="tf-buttons" role="tablist" aria-label="Chart timeframe">

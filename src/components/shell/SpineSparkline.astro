@@ -12,13 +12,22 @@ import type { TfPoint } from '~/lib/data/mock';
 
 export interface Props {
   series: TfPoint[];      // last-N closes
+  symbol?: string;        // for aria-label, e.g. 'BTC'
 }
 
-const { series } = Astro.props;
+const { series, symbol } = Astro.props;
 const seriesJson = JSON.stringify(series);
+const ariaLabel = symbol
+  ? `${symbol} ${series.length}-bar sparkline`
+  : `${series.length}-bar sparkline`;
 ---
 
-<div class="spine-spark" data-series={seriesJson}>
+<div
+  class="spine-spark"
+  data-series={seriesJson}
+  role="img"
+  aria-label={ariaLabel}
+>
   <div class="spark-mount" aria-hidden="true"></div>
   <span class="spark-pulse" aria-hidden="true"></span>
 </div>
