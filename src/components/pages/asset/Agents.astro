@@ -1,52 +1,79 @@
 ---
+// Agents tab — page header + stack of AgentCards + closing AgentSlot.
+//
+// BTC: 1 AgentCard (kalshi 15-min) + AgentSlot variant="add"
+// Quantum tickers: 0 cards + AgentSlot variant="empty"
+
 import type { AssetData } from '~/lib/types/asset';
+import AgentCard from '~/components/tiles/AgentCard.astro';
+import AgentSlot from '~/components/tiles/AgentSlot.astro';
 
 export interface Props { data: AssetData }
 const { data } = Astro.props;
 
-const agentCount = data.node.available ? 1 : 0;
+const agents = data.agents;
+const deployed = agents.length;
+const slotVariant: 'add' | 'empty' = deployed > 0 ? 'add' : 'empty';
 ---
 
-<section class="phase1-stub">
-  <p class="eyebrow">phase 4 · analysts <span class="jp">分析者</span></p>
-  <h2 class="title">Agents — {data.fullName}</h2>
-  <p class="body">
-    Stack of agent cards (analyst card with hero name, win-rate, stat
-    strip, latest-decision block, dark CTA) plus a sunken "add another
-    analyst" slot. {agentCount === 0
-      ? 'No agents yet — empty-state slot only.'
-      : `Showing ${agentCount} agent: ${data.node.available ? data.node.name : ''}.`}
-  </p>
+<section class="agents-page">
+  <header class="page-head">
+    <h2 class="page-title">
+      Analysts · {data.fullName}
+      <span class="jp" aria-hidden="true">分析者</span>
+    </h2>
+    <p class="page-meta">
+      {deployed} deployed · 0 pending
+    </p>
+  </header>
+
+  <div class="agents-stack">
+    {agents.map((agent) => (
+      <AgentCard agent={agent} />
+    ))}
+    <AgentSlot variant={slotVariant} fullName={data.fullName} />
+  </div>
 </section>
 
 <style>
-  .phase1-stub {
-    padding: 36px 32px 40px;
-    background: var(--paper);
-    border-radius: 4px;
-    box-shadow:
-      inset 0 1px 0 rgba(255,251,240,0.7),
-      0 1px 0 rgba(255,251,240,0.5),
-      0 4px 12px rgba(40,30,18,0.05);
+  .agents-page {
+    display: flex; flex-direction: column;
+    gap: 22px;
   }
-  .eyebrow {
-    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
-    letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--red); margin: 0 0 14px;
-    display: inline-flex; align-items: baseline; gap: 10px;
+
+  .page-head {
+    display: flex; flex-wrap: wrap; align-items: baseline;
+    justify-content: space-between; gap: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--ink-faint);
   }
-  .eyebrow .jp {
-    font-family: var(--font-jp); font-size: 13px;
-    letter-spacing: 0.04em; text-transform: none;
-    color: var(--red); font-weight: 400;
-  }
-  .title {
+  .page-title {
     font-family: var(--font-display); font-style: italic; font-weight: 400;
     font-size: 28px; line-height: 1.1; letter-spacing: -0.01em;
-    color: var(--ink); margin: 0 0 14px;
+    color: var(--ink); margin: 0;
+    display: inline-flex; align-items: baseline; gap: 14px;
   }
-  .body {
-    font-family: var(--font-body); font-size: 14px; line-height: 1.6;
-    color: var(--ink-mid); margin: 0; max-width: 64ch;
+  .page-title .jp {
+    font-family: var(--font-jp); font-size: 18px;
+    letter-spacing: 0.04em; color: var(--red);
+    font-style: normal;
+  }
+  .page-meta {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .agents-stack {
+    display: flex; flex-direction: column;
+    gap: 18px;
+  }
+
+  @media (max-width: 700px) {
+    .agents-page { gap: 18px; }
+    .page-title { font-size: 24px; }
+    .page-title .jp { font-size: 16px; }
+    .agents-stack { gap: 14px; }
   }
 </style>
