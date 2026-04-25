@@ -14,12 +14,65 @@ const user = (Astro.locals as { user?: string }).user;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
+
+    {/* Critical CSS — inlined to unblock first paint while the brand
+        stylesheets load async. Token hex values pulled verbatim from
+        public/brand/tokens.css; if the brand updates a token, mirror
+        it here to avoid drift. The full token set + recipes arrive
+        via the preload-swap below. */}
+    <style>
+      :root {
+        /* AssetPage layout vars — duplicated from AssetPage.astro's
+           is:global block so they're available on first paint. */
+        --rail-collapsed: 64px;
+        --spine-width: 220px;
+        --rail-expanded: 284px;
+        --masthead-height: 64px;
+
+        /* Paper + ink + brand red — above-the-fold critical. */
+        --paper: #F1ECE0;
+        --paper-deep: #E8E1D1;
+        --paper-coal: #3E362F;
+        --ink: #1A1815;
+        --ink-soft: #4A453E;
+        --ink-mid: #7A736A;
+        --ink-pale: #B5AE9F;
+        --ink-faint: #D8D2C2;
+        --red: #C8331E;
+        --gold: #B8923A;
+
+        /* Font families — actual @font-face declarations live in
+           fonts.css (async). System fallbacks render immediately;
+           web fonts swap in when fonts.css resolves. */
+        --font-display: 'Sentient', Georgia, serif;
+        --font-body: 'Satoshi', -apple-system, sans-serif;
+        --font-jp: 'Shippori Mincho', 'Noto Serif JP', serif;
+        --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+        /* Used pervasively by transitions in component CSS. */
+        --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--font-body);
+      }
+
+      /* Minimum chrome to avoid FOUC on the global nav before
+         recipes.css arrives. The component-scoped Astro CSS bundle
+         (still render-blocking, ~53KB) carries everything else. */
+      .nav-rail { background: var(--paper-coal); }
+      .nav-masthead { background: var(--paper); }
+    </style>
+
     <link rel="stylesheet" href="/brand/fonts.css" />
     <link rel="stylesheet" href="/brand/tokens.css" />
     <link rel="stylesheet" href="/brand/textures.css" />
     <link rel="stylesheet" href="/brand/recipes.css" />
   </head>
-  <body style="margin: 0; background: var(--paper, #f5f1e8); color: var(--ink, #1a1a1a);">
+  <body>
     {hideNav ? <slot /> : <Nav user={user}><slot /></Nav>}
   </body>
 </html>
