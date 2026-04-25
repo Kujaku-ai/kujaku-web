@@ -6,6 +6,18 @@
  * gets promoted to the vendor recipes. Anything app-specific stays.
  * --------------------------------------------------------------- */
 
+/* Default focus-visible — red 1px outline, 2px offset. Brand-locked
+ * focus indicator. Applied via :where() so component-level rules
+ * trump it without specificity wars; component overrides only
+ * needed when the default offset clips against a tight container.
+ *
+ * Uses :where() with a permissive selector list so any anchor,
+ * button, or interactive [tabindex] picks up the indicator. */
+:where(a, button, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 1px solid var(--red);
+  outline-offset: 2px;
+}
+
 /* .visually-hidden — strip from visual flow but keep in the
  * accessibility tree. Use for sr-only labels (e.g. direction words
  * adjacent to glyph icons) and shell-level h1 fallbacks for routes
