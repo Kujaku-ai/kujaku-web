@@ -151,5 +151,18 @@ const ariaLabel = symbol
     ro.observe(mount);
   }
 
-  document.querySelectorAll<HTMLDivElement>('.spine-spark').forEach(init);
+  // Defer chart construction off the critical path. createChart +
+  // addLineSeries + setData are the heavy work (~200ms aggregate
+  // under headless Chrome); pushing them to idle lets the page paint
+  // and become interactive first. Falls back to a 100ms setTimeout
+  // on engines without requestIdleCallback (Safari < 18).
+  function deferInit(root: HTMLDivElement) {
+    if ('requestIdleCallback' in window) {
+      (window as Window & typeof globalThis)
+        .requestIdleCallback(() => init(root), { timeout: 1500 });
+    } else {
+      setTimeout(() => init(root), 100);
+    }
+  }
+  document.querySelectorAll<HTMLDivElement>('.spine-spark').forEach(deferInit);
 </script>
