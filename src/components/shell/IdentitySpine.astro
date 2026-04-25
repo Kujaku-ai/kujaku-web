@@ -46,7 +46,10 @@ const sparkSeries: TfPoint[] = bars.slice(-30).map((b) => ({
 <aside class="spine" aria-label="ticker identity">
   <div class="spine-head">
     <p class="spine-sector">{sector.toUpperCase()}</p>
-    <p class="spine-name">{fullName}</p>
+    {/* Page-level h1 lives here at ≥1100px. AssetPage adds a
+        visually-hidden h1 fallback so the asset name is announced
+        on mobile too (the spine itself is display:none below 1100). */}
+    <h1 class="spine-name">{fullName}</h1>
     <p class="spine-sym">{symbol}</p>
   </div>
   <div class="spine-status">

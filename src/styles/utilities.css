@@ -6,6 +6,23 @@
  * gets promoted to the vendor recipes. Anything app-specific stays.
  * --------------------------------------------------------------- */
 
+/* .visually-hidden — strip from visual flow but keep in the
+ * accessibility tree. Use for sr-only labels (e.g. direction words
+ * adjacent to glyph icons) and shell-level h1 fallbacks for routes
+ * where the spine is hidden by viewport. Standard pattern from the
+ * inclusive-components canon. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* .is-hoverable — paper-lift on hover. Used on tiles that aren't
  * clickable buttons themselves but want a reading affordance.
  *

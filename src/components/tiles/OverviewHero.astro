@@ -37,7 +37,10 @@ const dc = data.dailyChange;
 
 <section class="hero-tile">
   <div class="hero-id">
-    <h1 class="full-name">{data.fullName}</h1>
+    {/* Page-level h1 lives in the IdentitySpine (or the AssetPage
+        mobile fallback). The hero's full-name is an h2 — the most
+        prominent heading in the tab content but not the page h1. */}
+    <h2 class="full-name">{data.fullName}</h2>
     <p class="ticker-sym">{data.symbol}</p>
   </div>
   <div class="hero-num">

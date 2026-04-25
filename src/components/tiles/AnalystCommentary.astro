@@ -42,7 +42,9 @@ const a = data.analyst;
   {a ? (
     <>
       <p class="date-header">{fmtDateRangeHeader(a.rangeLabel, a.reportTs)}</p>
-      <h2 class="title">{a.title}</h2>
+      {/* Card-level heading — h3 to fit the spec hierarchy
+          (h1 page → h2 tab → h3 card). */}
+      <h3 class="title">{a.title}</h3>
 
       <div class="body">
         {a.body.map((para) => <p>{para}</p>)}
