@@ -1,37 +1,151 @@
 ---
 import Base from '~/layouts/Base.astro';
-import { assetBySlug, sectorBySlug, botsForAsset } from '~/config/taxonomy';
-export interface Props { sectorSlug: string; assetSlug: string }
-const { sectorSlug, assetSlug } = Astro.props;
+import IdentitySpine from '~/components/shell/IdentitySpine.astro';
+import Masthead from '~/components/shell/Masthead.astro';
+import TabRail from '~/components/shell/TabRail.astro';
+import Overview from '~/components/pages/asset/Overview.astro';
+import Charting from '~/components/pages/asset/Charting.astro';
+import Agents from '~/components/pages/asset/Agents.astro';
+import News from '~/components/pages/asset/News.astro';
+import Comparisons from '~/components/pages/asset/Comparisons.astro';
+import { sectorBySlug, assetBySlug } from '~/config/taxonomy';
+import { loadAssetData } from '~/lib/data/mock';
+import type { AssetTab } from '~/lib/types/asset';
+
+export interface Props {
+  sectorSlug: string;
+  assetSlug: string;
+  activeTab: AssetTab;
+}
+
+const { sectorSlug, assetSlug, activeTab } = Astro.props;
+
 const sector = sectorBySlug(sectorSlug);
 const asset = assetBySlug(assetSlug);
-if (!sector || !asset) return Astro.redirect('/');
-const botList = botsForAsset(assetSlug);
+const data = loadAssetData(assetSlug);
+
+// Caller route validates these before invoking; defensive null check
+// here keeps the type system honest.
+if (!sector || !asset || !data) {
+  return new Response('Not found', { status: 404 });
+}
+
+function fmtStamp(iso: string): string {
+  const d = new Date(iso);
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const day = d.getUTCDate();
+  const mon = months[d.getUTCMonth()];
+  const h = String(d.getUTCHours()).padStart(2, '0');
+  const m = String(d.getUTCMinutes()).padStart(2, '0');
+  return `${day} ${mon} · ${h}:${m} UTC · ${data.sourceLabel.toUpperCase()}`;
+}
+
+const stamp = fmtStamp(data.lastUpdated);
+
+const TAB_LABELS: Record<AssetTab, string> = {
+  overview: 'Overview',
+  charting: 'Charting',
+  agents: 'Agents',
+  news: 'News',
+  comparisons: 'Comparisons',
+};
 ---
-<Base title={`kujaku.ai — ${asset.name}`}>
-  <section class="canvas">
-    <h1 class="page-title">{asset.slug}</h1>
-    <div class="buttons">
-      {botList.map((bot) => (
-        <a class="btn is-route" href={`/${asset.canonicalSector}/${asset.slug}/${bot.slug}`}>{bot.slug}</a>
-      ))}
-    </div>
-  </section>
+
+<Base title={`kujaku.ai — ${data.fullName} · ${TAB_LABELS[activeTab]}`}>
+  <div class="binder">
+    <IdentitySpine
+      sector={sector.name}
+      fullName={data.fullName}
+      symbol={data.symbol}
+      sourceLabel={data.sourceLabel}
+      status={data.stale ? 'stale' : 'live'}
+      lastUpdatedISO={data.lastUpdated}
+    />
+
+    <main class="content">
+      <Masthead
+        sectorName={sector.name}
+        fullName={data.fullName}
+        activeTab={activeTab}
+        stamp={stamp}
+      />
+
+      <TabRail
+        sectorSlug={sector.slug}
+        assetSlug={asset.slug}
+        activeTab={activeTab}
+      />
+
+      {data.stale && (
+        <div class="stale-banner">
+          <span class="label">status · stalled</span>
+          <span class="detail">last update {data.lastUpdated}</span>
+        </div>
+      )}
+
+      <section class="page is-active" data-page={activeTab}>
+        {activeTab === 'overview' && <Overview data={data} />}
+        {activeTab === 'charting' && <Charting data={data} />}
+        {activeTab === 'agents' && <Agents data={data} />}
+        {activeTab === 'news' && <News data={data} />}
+        {activeTab === 'comparisons' && <Comparisons data={data} />}
+      </section>
+    </main>
+  </div>
 </Base>
 
-<style>
-  .canvas {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-height: calc(100vh - 48px); gap: 40px;
+<style is:global>
+  /* Layout vars — locally scoped to AssetPage. Not in vendor tokens.css.
+     Match the literal pixels nav-rail / nav-masthead use in recipes.css.
+     Promote to brand tokens when more pages need them. */
+  :root {
+    --rail-collapsed: 64px;
+    --spine-width: 220px;
+    --rail-expanded: 284px;     /* 64 + 220 */
+    --masthead-height: 64px;
   }
-  .page-title {
-    font-family: var(--font-display); font-style: italic; font-weight: 400;
-    font-size: var(--text-5xl, 48px); color: var(--ink);
-    margin: 0; letter-spacing: -0.02em;
+
+  /* Push the binder right of the global nav-rail (64px) and identity
+     spine (220px). The binder content column owns its own padding. */
+  .binder {
+    display: block;
+    min-height: calc(100vh - var(--masthead-height));
+    margin-left: var(--rail-expanded);
+    background: var(--paper-deep);
   }
-  .buttons { display: flex; flex-direction: column; gap: 16px; align-items: center; }
-  @media (max-width: 767px) {
-    .page-title { font-size: var(--text-3xl, 30px); }
-    .buttons { gap: 12px; }
+
+  .binder > .content {
+    padding: 28px 32px 64px;
+    min-width: 0;
+    background: var(--paper-deep);
+  }
+
+  .stale-banner {
+    margin: 0 0 18px;
+    padding: 12px 18px;
+    background: var(--paper);
+    border-radius: 4px;
+    box-shadow:
+      inset 0 2px 4px rgba(40,30,18,0.08),
+      inset 0 -1px 0 rgba(255,251,240,0.7);
+    display: flex; align-items: baseline; gap: 16px;
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-mid);
+  }
+  .stale-banner .label { color: var(--ink); font-weight: 500; }
+  .stale-banner .detail { color: var(--ink-mid); font-variant-numeric: tabular-nums; }
+
+  .page { display: block; }
+
+  /* ≤1100px: spine collapses to top stack, binder takes full width. */
+  @media (max-width: 1100px) {
+    .binder { margin-left: var(--rail-collapsed); }
+    .binder > .content { padding: 20px 24px 64px; }
+  }
+
+  @media (max-width: 700px) {
+    .binder { margin-left: 0; }
+    .binder > .content { padding: 16px 16px 48px; }
   }
 </style>
