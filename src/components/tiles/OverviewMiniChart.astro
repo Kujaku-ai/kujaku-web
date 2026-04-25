@@ -5,7 +5,9 @@
 // clicks don't need a fetch.
 //
 // Visual contract:
-//   - Brand red line (--red), 1px
+//   - --ink line, 1px (red is reserved for kanji eyebrows, the live
+//     pulse, and :hover headlines — using it for the line dilutes the
+//     signal between data and live indicator)
 //   - No axes, no grid, no crosshair markers visible by default
 //   - Hover crosshair: gold (#B8923A), radius 2, dashed --ink-faint guides
 //   - Pulse at last point (same recipe as the spine sparkline, full size)
@@ -216,7 +218,7 @@ const seriesPayload = JSON.stringify(seriesByTf);
     });
 
     const line = chart.addLineSeries({
-      color: '#C8331E',           // --red
+      color: '#1A1815',           // --ink
       lineWidth: 1,
       lineStyle: LineStyle.Solid,
       priceLineVisible: false,
