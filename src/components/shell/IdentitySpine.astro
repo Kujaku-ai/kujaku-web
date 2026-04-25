@@ -2,10 +2,15 @@
 // Left identity spine. Fixed-position 220px column to the right of the
 // global nav-rail, anchored under the masthead. Top-to-bottom: sector
 // eyebrow, italic name, mono symbol, source/status/updated table,
-// hairline, intraday sparkline placeholder, foot.
+// hairline, intraday sparkline, foot.
 //
-// Phase 1: sparkline mount is an empty hairline placeholder. Phase 2
-// wires the live sparkline from /api/prices/recent.
+// Phase 2: sparkline is a real LWC chart from MOCK bars. Whatever the
+// asset has in `data.bars` (60 for BTC, fewer for some quantum tickers)
+// is sliced to the last 30 closes and shipped into SpineSparkline.
+
+import SpineSparkline from '~/components/shell/SpineSparkline.astro';
+import type { Bar } from '~/lib/types/asset';
+import type { TfPoint } from '~/lib/data/mock';
 
 export interface Props {
   sector: string;             // display label, e.g. 'Crypto'
@@ -14,9 +19,10 @@ export interface Props {
   sourceLabel: string;
   status: 'live' | 'stale' | 'down';
   lastUpdatedISO: string;
+  bars: Bar[];                // recent OHLC bars (sliced to 30 closes)
 }
 
-const { sector, fullName, symbol, sourceLabel, status, lastUpdatedISO } = Astro.props;
+const { sector, fullName, symbol, sourceLabel, status, lastUpdatedISO, bars } = Astro.props;
 
 function fmtUtc(iso: string): string {
   const d = new Date(iso);
@@ -27,6 +33,14 @@ function fmtUtc(iso: string): string {
 
 const statusLabel = status === 'live' ? 'LIVE' : status === 'stale' ? 'STALE' : 'DOWN';
 const updated = fmtUtc(lastUpdatedISO);
+
+// Last-30 closes as LWC line points. Quantum tickers with fewer than
+// 30 bars degrade gracefully — SpineSparkline renders whatever we
+// have (or skips the chart for <2 points).
+const sparkSeries: TfPoint[] = bars.slice(-30).map((b) => ({
+  time: b.time,
+  value: b.close,
+}));
 ---
 
 <aside class="spine" aria-label="ticker identity">
@@ -44,7 +58,7 @@ const updated = fmtUtc(lastUpdatedISO);
   </div>
   <div class="spine-sparkline">
     <p class="sp-label">intraday · 30 bar</p>
-    <div class="sp-mount" aria-hidden="true"></div>
+    <SpineSparkline series={sparkSeries} />
   </div>
   <p class="spine-foot">kujaku.ai</p>
 </aside>
@@ -110,13 +124,6 @@ const updated = fmtUtc(lastUpdatedISO);
     font-family: var(--font-mono); font-size: 9px;
     letter-spacing: 0.22em; text-transform: uppercase;
     color: var(--ink-pale); margin: 0;
-  }
-  /* Phase 1: hairline placeholder. Phase 2 mounts a live SVG sparkline
-     here from /api/prices/recent. */
-  .spine-sparkline .sp-mount {
-    height: 34px;
-    border-top: 1px dashed var(--ink-faint);
-    border-bottom: 1px dashed var(--ink-faint);
   }
 
   .spine-foot {
