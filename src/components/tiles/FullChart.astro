@@ -1,0 +1,438 @@
+---
+// Charting full chart — span-12 LWC tile with 5-TF buttons in the
+// header eyebrow, LINE/CANDLE mode toggle in the footer, and 4 overlay
+// pills (LIQUIDITY · FAIR VALUE GAP · STRUCTURE · ORDER BLOCKS).
+//
+// Mock data only in Phase 3. All 5 TF series for both line and candle
+// modes are pre-computed server-side and shipped as a single inline
+// JSON payload, so TF + mode clicks never hit the network.
+//
+// State is local to this component (`tfStateFull`-equivalent) and
+// independent from Overview's mini-chart state.
+
+import {
+  buildTfSeries,
+  buildTfBars,
+  type TfKey,
+  type TfPoint,
+  type TfBar,
+} from '~/lib/data/mock';
+import type { AssetData } from '~/lib/types/asset';
+
+export interface Props { data: AssetData }
+const { data } = Astro.props;
+
+const TFS: readonly TfKey[] = ['1H', '1D', '1W', '1M', '1Y'] as const;
+const DEFAULT_TF: TfKey = '1D';
+
+// Pre-compute every (tf, mode) pair so client clicks never fetch.
+const lineByTf: Record<TfKey, TfPoint[]> = {
+  '1H': buildTfSeries(data.slug, '1H'),
+  '1D': buildTfSeries(data.slug, '1D'),
+  '1W': buildTfSeries(data.slug, '1W'),
+  '1M': buildTfSeries(data.slug, '1M'),
+  '1Y': buildTfSeries(data.slug, '1Y'),
+};
+const barsByTf: Record<TfKey, TfBar[]> = {
+  '1H': buildTfBars(data.slug, '1H'),
+  '1D': buildTfBars(data.slug, '1D'),
+  '1W': buildTfBars(data.slug, '1W'),
+  '1M': buildTfBars(data.slug, '1M'),
+  '1Y': buildTfBars(data.slug, '1Y'),
+};
+const payload = JSON.stringify({ line: lineByTf, candle: barsByTf });
+---
+
+<section
+  class="full-chart-tile"
+  data-default-tf={DEFAULT_TF}
+  data-payload={payload}
+>
+  <header class="tile-eyebrow tf-row">
+    <div class="tf-buttons" role="tablist" aria-label="Chart timeframe">
+      {TFS.map((tf) => (
+        <button
+          type="button"
+          class={`tf-btn${tf === DEFAULT_TF ? ' is-active' : ''}`}
+          data-tf={tf}
+          role="tab"
+          aria-selected={tf === DEFAULT_TF ? 'true' : 'false'}
+        >{tf}</button>
+      ))}
+    </div>
+    <span class="lwc-attribution" aria-hidden="true">lightweight-charts</span>
+  </header>
+
+  <div class="chart-container">
+    <div class="chart-mount" aria-hidden="true"></div>
+    <span class="last-pulse" aria-hidden="true"></span>
+  </div>
+
+  <footer class="chart-controls">
+    <div class="mode-group" role="tablist" aria-label="Chart type">
+      <button type="button" data-mode="line"   class="is-active" aria-selected="true">line</button>
+      <button type="button" data-mode="candle" aria-selected="false">candle</button>
+    </div>
+
+    <span class="cc-divider" aria-hidden="true"></span>
+
+    {/* Overlay pills — visual-only in Phase 3.
+        TODO Phase 8+: wire to charting-calculations API per overlay type
+        (liquidity / fvg / structure / orderblocks). */}
+    <div class="overlay-group" role="group" aria-label="Overlays">
+      <button type="button" data-overlay="liquidity">
+        <span class="dot" aria-hidden="true"></span>liquidity
+      </button>
+      <button type="button" data-overlay="fvg">
+        <span class="dot" aria-hidden="true"></span>fair value gap
+      </button>
+      <button type="button" data-overlay="structure">
+        <span class="dot" aria-hidden="true"></span>structure
+      </button>
+      <button type="button" data-overlay="orderblocks">
+        <span class="dot" aria-hidden="true"></span>order blocks
+      </button>
+    </div>
+  </footer>
+</section>
+
+<style>
+  .full-chart-tile {
+    background: var(--paper);
+    border-radius: 4px;
+    padding: 18px 22px 16px;
+    box-shadow:
+      inset 0 1px 0 rgba(255,251,240,0.7),
+      0 1px 0 rgba(255,251,240,0.5),
+      0 4px 12px rgba(40,30,18,0.05);
+    display: flex; flex-direction: column;
+  }
+
+  .tile-eyebrow {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 0 0 8px;
+  }
+  .tf-row { display: flex; align-items: center; justify-content: space-between; }
+  .tf-buttons { display: flex; align-items: center; gap: 14px; }
+  .tf-btn {
+    background: transparent; border: 0; padding: 0;
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-pale); cursor: pointer;
+    transition: color 100ms var(--ease-out);
+  }
+  .tf-btn:hover { color: var(--ink-mid); }
+  .tf-btn.is-active { color: var(--ink); }
+  .tf-btn:focus-visible { outline: 1px solid var(--red); outline-offset: 2px; }
+  .lwc-attribution {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--ink-pale);
+  }
+
+  .chart-container {
+    position: relative;
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 540px;
+  }
+  .chart-mount { position: absolute; inset: 0; }
+
+  /* Belt-and-braces: even with attributionLogo:false, hide the LWC
+     attribution if it sneaks past. */
+  .chart-container :global(.lwc-attribution),
+  .chart-container :global([data-name="trading-view-attribution-logo"]) {
+    display: none !important;
+  }
+
+  /* Live pulse — brand red dot at last point with two staggered halos.
+     Same recipe as the spine + mini chart. JS positions the dot. */
+  .last-pulse {
+    position: absolute;
+    top: -100px; left: -100px;
+    width: 8px; height: 8px;
+    background: var(--red);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 5;
+    transform: translate(-50%, -50%);
+    box-shadow:
+      0 0 0 2px rgba(255, 251, 240, 0.6),
+      0 0 10px rgba(200, 51, 30, 0.5);
+  }
+  .last-pulse::before,
+  .last-pulse::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--red);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .last-pulse::before { animation: full-pulse-ring 1.8s ease-out infinite; }
+  .last-pulse::after  { animation: full-pulse-ring 1.8s ease-out infinite; animation-delay: 0.9s; }
+  @keyframes full-pulse-ring {
+    0%   { transform: translate(-50%, -50%) scale(1);   opacity: 0.6; }
+    80%  { opacity: 0; }
+    100% { transform: translate(-50%, -50%) scale(3.5); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .last-pulse::before, .last-pulse::after { animation: none; }
+  }
+
+  /* Footer controls — mode segmented + hairline divider + overlay pills. */
+  .chart-controls {
+    margin-top: 14px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .mode-group { display: flex; align-items: center; gap: 4px; }
+  .mode-group button,
+  .overlay-group button {
+    background: var(--paper); border: 1px solid var(--ink-faint);
+    padding: 7px 14px; border-radius: 2px; cursor: pointer;
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-mid);
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: background 120ms var(--ease-out),
+                color 120ms var(--ease-out),
+                border-color 120ms var(--ease-out);
+  }
+  .mode-group button:hover,
+  .overlay-group button:hover { color: var(--ink); border-color: var(--ink-soft); }
+  /* Mode active = inverted (paper-coal background). */
+  .mode-group button.is-active {
+    background: var(--paper-coal); color: var(--paper);
+    border-color: var(--paper-coal);
+  }
+  .cc-divider {
+    display: inline-block;
+    width: 1px; height: 20px; background: var(--ink-faint);
+    margin: 0 4px;
+  }
+  .overlay-group {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .overlay-group .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--ink-faint);
+    transition: background 120ms var(--ease-out);
+  }
+  .overlay-group button.is-active {
+    background: var(--paper-coal); color: var(--paper);
+    border-color: var(--paper-coal);
+  }
+  .overlay-group button.is-active .dot { background: var(--gold); }
+
+  @media (max-width: 700px) {
+    .full-chart-tile { padding: 16px 16px 14px; }
+    .chart-container { min-height: 380px; }
+    .lwc-attribution { display: none; }
+    .chart-controls { gap: 12px; }
+    .cc-divider { display: none; }
+    .mode-group, .overlay-group { width: 100%; }
+    .overlay-group { gap: 6px; }
+    .overlay-group button { padding: 6px 10px; font-size: 9px; letter-spacing: 0.14em; }
+  }
+</style>
+
+<script>
+  import { createChart, LineStyle, CrosshairMode } from 'lightweight-charts';
+
+  type TfKey = '1H' | '1D' | '1W' | '1M' | '1Y';
+  type Mode = 'line' | 'candle';
+  type LinePt = { time: number; value: number };
+  type Bar = { time: number; open: number; high: number; low: number; close: number; volume: number };
+  type Payload = { line: Record<TfKey, LinePt[]>; candle: Record<TfKey, Bar[]> };
+
+  function init(root: HTMLElement) {
+    const mount = root.querySelector<HTMLDivElement>('.chart-mount');
+    const pulse = root.querySelector<HTMLSpanElement>('.last-pulse');
+    const tfButtons = Array.from(
+      root.querySelectorAll<HTMLButtonElement>('.tf-btn'),
+    );
+    const modeButtons = Array.from(
+      root.querySelectorAll<HTMLButtonElement>('.mode-group button'),
+    );
+    const overlayButtons = Array.from(
+      root.querySelectorAll<HTMLButtonElement>('.overlay-group button'),
+    );
+    const raw = root.dataset.payload;
+    if (!mount || !pulse || !raw) return;
+
+    let payload: Payload;
+    try { payload = JSON.parse(raw) as Payload; } catch { return; }
+
+    let currentTf: TfKey = (root.dataset.defaultTf || '1D') as TfKey;
+    let currentMode: Mode = 'line';
+
+    const chart = createChart(mount, {
+      width: mount.clientWidth || 800,
+      height: mount.clientHeight || 540,
+      layout: {
+        background: { color: 'transparent' },
+        textColor: '#7A736A',          // --ink-mid for axis labels
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 10,
+        attributionLogo: false,
+      },
+      // Per spec: no horizontal grid lines. Verticals stay invisible too —
+      // brand uses hairline dividers between tiles, not chart-internal grid.
+      grid: { vertLines: { visible: false }, horzLines: { visible: false } },
+      rightPriceScale: { visible: true, borderColor: '#D8D2C2' },
+      leftPriceScale: { visible: false },
+      timeScale: {
+        visible: true,
+        borderColor: '#D8D2C2',
+        timeVisible: true,
+        secondsVisible: false,
+      },
+      crosshair: {
+        mode: CrosshairMode.Normal,
+        vertLine: {
+          color: '#D8D2C2',
+          width: 1,
+          style: LineStyle.Dashed,
+          labelVisible: true,
+          labelBackgroundColor: '#1A1815',
+        },
+        horzLine: {
+          color: '#D8D2C2',
+          width: 1,
+          style: LineStyle.Dashed,
+          labelVisible: true,
+          labelBackgroundColor: '#1A1815',
+        },
+      },
+      handleScale: false,
+      handleScroll: false,
+    });
+
+    type AnySeries = ReturnType<typeof chart.addLineSeries>;
+    let series: AnySeries | null = null;
+    let lastPoint: { time: number; value: number } | null = null;
+
+    function makeLineSeries() {
+      return chart.addLineSeries({
+        color: '#1A1815',          // --ink (per architect ruling)
+        lineWidth: 1,
+        lineStyle: LineStyle.Solid,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: true,
+        crosshairMarkerRadius: 2,
+        crosshairMarkerBorderColor: '#B8923A',     // --gold
+        crosshairMarkerBackgroundColor: '#B8923A',
+      });
+    }
+    function makeCandleSeries() {
+      // No green/red — direction-via-color is a brand violation.
+      // Bullish candle = ink border + paper-deep body; bearish = same
+      // border + ink body (filled) so the difference reads via fill
+      // density, not hue. Wicks share --ink-mid for both.
+      return chart.addCandlestickSeries({
+        upColor:        '#E8E1D1',     // --paper-deep (bullish body fill)
+        downColor:      '#1A1815',     // --ink (bearish body fill)
+        borderUpColor:  '#1A1815',
+        borderDownColor:'#1A1815',
+        wickUpColor:    '#7A736A',     // --ink-mid
+        wickDownColor:  '#7A736A',
+        priceLineVisible: false,
+        lastValueVisible: false,
+      });
+    }
+
+    function render() {
+      if (series) {
+        chart.removeSeries(series);
+        series = null;
+      }
+      if (currentMode === 'line') {
+        const data = payload.line[currentTf];
+        if (!data || !data.length) return;
+        series = makeLineSeries();
+        series.setData(data as never);
+        lastPoint = { time: data[data.length - 1].time, value: data[data.length - 1].value };
+      } else {
+        const bars = payload.candle[currentTf];
+        if (!bars || !bars.length) return;
+        series = makeCandleSeries();
+        series.setData(bars as never);
+        const last = bars[bars.length - 1];
+        lastPoint = { time: last.time, value: last.close };
+      }
+      const len = currentMode === 'line'
+        ? payload.line[currentTf].length
+        : payload.candle[currentTf].length;
+      const rightOffsetBars = Math.ceil(len * 0.25);
+      chart.timeScale().applyOptions({ rightOffset: rightOffsetBars });
+      chart.timeScale().fitContent();
+      requestAnimationFrame(positionPulse);
+    }
+
+    function positionPulse() {
+      if (!lastPoint || !pulse || !series) return;
+      const x = chart.timeScale().timeToCoordinate(lastPoint.time as never);
+      const y = (series as { priceToCoordinate: (n: number) => number | null })
+        .priceToCoordinate(lastPoint.value);
+      if (x === null || y === null) return;
+      pulse.style.left = String(x) + 'px';
+      pulse.style.top  = String(y) + 'px';
+    }
+
+    render();
+
+    chart.timeScale().subscribeVisibleTimeRangeChange(() => {
+      requestAnimationFrame(positionPulse);
+    });
+
+    const ro = new ResizeObserver(() => {
+      if (!mount.clientWidth) return;
+      chart.applyOptions({ width: mount.clientWidth, height: mount.clientHeight });
+      requestAnimationFrame(positionPulse);
+    });
+    ro.observe(mount);
+
+    tfButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tf = btn.dataset.tf as TfKey | undefined;
+        if (!tf || tf === currentTf) return;
+        currentTf = tf;
+        tfButtons.forEach((b) => {
+          const isActive = b === btn;
+          b.classList.toggle('is-active', isActive);
+          b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        render();
+      });
+    });
+
+    modeButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode as Mode | undefined;
+        if (!mode || mode === currentMode) return;
+        currentMode = mode;
+        modeButtons.forEach((b) => {
+          const isActive = b === btn;
+          b.classList.toggle('is-active', isActive);
+          b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        render();
+      });
+    });
+
+    // Overlay pills — Phase 3 visual-only. Toggle .is-active locally;
+    // do NOT call any overlay-rendering function.
+    // TODO Phase 8+: wire to charting-calculations API per overlay type
+    //                (liquidity / fvg / structure / orderblocks).
+    overlayButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        btn.classList.toggle('is-active');
+      });
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('.full-chart-tile').forEach(init);
+</script>

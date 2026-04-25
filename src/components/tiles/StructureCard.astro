@@ -1,0 +1,114 @@
+---
+// Structure analysis — 5-cell hairline-divided strip.
+// Single source of truth: data.structure (5 cells). Overview's
+// perf+bias card reads the same field but maps to short/month/year only;
+// this card shows all 5: short-term · 24H · 1W · 1M · 1Y.
+
+import type { AssetData, Direction, StructureCell } from '~/lib/types/asset';
+
+export interface Props { data: AssetData }
+const { data } = Astro.props;
+
+function dirGlyph(dir: Direction | undefined): string {
+  if (dir === 'up')   return '↑';
+  if (dir === 'down') return '↓';
+  if (dir === 'side') return '↔';
+  return '→';
+}
+
+const cells: Array<{ lab: string; cell: StructureCell }> = [
+  { lab: 'short-term', cell: data.structure.short },
+  { lab: '24h',        cell: data.structure.day   },
+  { lab: '1w',         cell: data.structure.week  },
+  { lab: '1m',         cell: data.structure.month },
+  { lab: '1y',         cell: data.structure.year  },
+];
+---
+
+<section class="structure-card">
+  <p class="card-eyebrow">structure analysis <span class="jp">構造</span></p>
+  <div class="cells">
+    {cells.map(({ lab, cell }) => (
+      <div class="cell">
+        <p class="lab">{lab}</p>
+        <p class="bias-line">
+          <span class="glyph">{dirGlyph(cell.dir)}</span>
+          <span class="word">{cell.sentiment}</span>
+        </p>
+        <p class="horizon">{cell.horizon}</p>
+      </div>
+    ))}
+  </div>
+</section>
+
+<style>
+  .structure-card {
+    padding: 22px 28px 24px;
+    background: var(--paper);
+    border-radius: 4px;
+    box-shadow:
+      inset 0 1px 0 rgba(255,251,240,0.7),
+      0 1px 0 rgba(255,251,240,0.5),
+      0 4px 12px rgba(40,30,18,0.05);
+  }
+  .card-eyebrow {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 0 0 18px;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  .card-eyebrow .jp {
+    font-family: var(--font-jp); font-size: 13px;
+    letter-spacing: 0.04em; text-transform: none;
+    color: var(--red); font-weight: 400;
+  }
+
+  .cells {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+  }
+  .cell {
+    display: flex; flex-direction: column; gap: 8px;
+    border-left: 1px solid var(--ink-faint);
+    padding-left: 16px;
+  }
+  .cell:first-child { border-left: 0; padding-left: 0; }
+
+  .cell .lab {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-pale); margin: 0;
+  }
+  .cell .bias-line {
+    display: flex; align-items: baseline; gap: 10px;
+    margin: 0;
+  }
+  .cell .glyph {
+    font-family: var(--font-mono); font-size: 22px; font-weight: 500;
+    color: var(--ink); line-height: 1;
+  }
+  .cell .word {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: 18px; color: var(--ink); line-height: 1.1;
+    letter-spacing: -0.005em;
+  }
+  .cell .horizon {
+    font-family: var(--font-mono); font-size: 9px;
+    color: var(--ink-mid); margin: 2px 0 0;
+    letter-spacing: 0.18em; text-transform: uppercase;
+  }
+
+  @media (max-width: 1100px) {
+    .cells { grid-template-columns: repeat(5, 1fr); gap: 14px; }
+    .structure-card { padding: 20px 22px; }
+  }
+  @media (max-width: 700px) {
+    .cells { grid-template-columns: 1fr; gap: 0; }
+    .cell {
+      border-left: 0; padding-left: 0; padding-top: 14px;
+      border-top: 1px solid var(--ink-faint);
+    }
+    .cell:first-child { border-top: 0; padding-top: 0; }
+  }
+</style>
