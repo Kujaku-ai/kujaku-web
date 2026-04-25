@@ -1,0 +1,278 @@
+---
+// Editorial comparison card. Wrapper applies .is-hoverable (paper
+// lift + headline → red on hover) but is NOT pressable — only the
+// inner CTA is. Same vocabulary as the v02 cm-card.
+//
+// Layout top-to-bottom:
+//   eyebrow row (category · 比較  ·  refreshed daily) → vs hero (3-col,
+//   self left, italic "vs" middle, other right) → metric callout
+//   (top+bottom hairline) → italic Sentient title → body prose →
+//   foot (byline + dark CTA).
+//
+// Direction-via-glyph rule: ↑↓→ in --ink-mid, never red/green.
+
+import type { Comparison, Direction } from '~/lib/types/asset';
+
+export interface Props {
+  comparison: Comparison;
+  selfSymbol: string;
+  selfName: string;
+  selfPrice: number;
+}
+const { comparison, selfSymbol, selfName, selfPrice } = Astro.props;
+
+function fmtPrice(n: number): string {
+  // 2 decimals, comma thousands. The other side ships pre-formatted
+  // (vsPrice is a string) so we only format self-price here.
+  return '$' + n.toLocaleString('en-US', {
+    minimumFractionDigits: 2, maximumFractionDigits: 2,
+  });
+}
+
+function glyphOf(dir: Direction): string {
+  return dir === 'up' ? '↑' : dir === 'down' ? '↓' : '→';
+}
+function fmtPerf(pct: number, dir: Direction): string {
+  const sign = pct > 0 ? '+' : '';
+  return `${glyphOf(dir)} ${sign}${pct.toFixed(2)}% / 24h`;
+}
+
+function fmtRefreshed(iso: string): string {
+  const d = new Date(iso);
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const day = d.getUTCDate();
+  const mon = months[d.getUTCMonth()];
+  const h = String(d.getUTCHours()).padStart(2, '0');
+  const m = String(d.getUTCMinutes()).padStart(2, '0');
+  return `${day} ${mon} · ${h}:${m}`;
+}
+
+const c = comparison;
+---
+
+<article class="comparison-card is-hoverable">
+  <header class="cm-eyebrow">
+    <p class="cm-pair">
+      comparison · {c.vsCategory} <span class="jp">比較</span>
+    </p>
+    <p class="cm-meta">refreshed {fmtRefreshed(c.refreshedAt)} · daily agentic</p>
+  </header>
+
+  <div class="cm-vs-row">
+    <div class="cm-vs-side cm-self">
+      <p class="cm-vs-symbol">{selfSymbol}</p>
+      <p class="cm-vs-name">{selfName}</p>
+      <p class="cm-vs-price">{fmtPrice(selfPrice)}</p>
+      <p class="cm-vs-perf">{fmtPerf(c.selfPerfPct, c.selfPerfDir)}</p>
+    </div>
+    <div class="cm-vs-divider" aria-hidden="true">vs</div>
+    <div class="cm-vs-side cm-other">
+      <p class="cm-vs-symbol">{c.vsSymbol}</p>
+      <p class="cm-vs-name">{c.vsName}</p>
+      <p class="cm-vs-price">{c.vsPrice}</p>
+      <p class="cm-vs-perf">{fmtPerf(c.vsPerfPct, c.vsPerfDir)}</p>
+    </div>
+  </div>
+
+  <div class="cm-metric">
+    <span class="cm-metric-label">{c.metricLabel}</span>
+    <span class="cm-metric-value">{c.metricValue}</span>
+    <span class="cm-metric-trend">{c.metricTrend}</span>
+  </div>
+
+  {/* `.headline` class is what `.is-hoverable .headline` targets in
+      utilities.css for the hover-color rule. `.cm-title` carries the
+      cosmetic styling. */}
+  <h3 class="cm-title headline">{c.title}</h3>
+
+  <div class="cm-body">
+    <p>{c.body}</p>
+  </div>
+
+  <footer class="cm-foot">
+    <p class="cm-byline">generated daily · kujaku newsdesk</p>
+    {/* TODO: dedicated /comparisons/{slug}/{vs} page lands in a future
+        phase. For now the link is "#" — architect-approved per
+        Phase 6 spec. */}
+    <a class="cm-cta is-pressable" href="#">
+      enter analysis <span class="arrow" aria-hidden="true">→</span>
+    </a>
+  </footer>
+</article>
+
+<style>
+  .comparison-card {
+    background: var(--paper);
+    border-radius: 4px;
+    padding: 22px 26px 24px;
+    box-shadow:
+      inset 0 1px 0 rgba(255,251,240,0.7),
+      0 1px 0 rgba(255,251,240,0.5),
+      0 2px 6px rgba(40,30,18,0.05),
+      0 6px 14px rgba(40,30,18,0.04);
+    display: flex; flex-direction: column; gap: 18px;
+  }
+
+  /* Eyebrow row — left: category · 比較, right: refreshed-at meta.
+     Hairline below separates the eyebrow from the vs hero. */
+  .cm-eyebrow {
+    display: flex; flex-wrap: wrap; align-items: baseline;
+    justify-content: space-between; gap: 14px; margin: 0;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--ink-faint);
+  }
+  .cm-pair {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--ink); margin: 0;
+    display: inline-flex; align-items: baseline; gap: 10px;
+  }
+  .cm-pair .jp {
+    font-family: var(--font-jp); font-size: 14px;
+    letter-spacing: 0.04em; text-transform: none;
+    color: var(--red); font-weight: 400;
+  }
+  .cm-meta {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-pale); margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Vs hero — 3-col grid. Self left, italic "vs" centered, other right
+     (right-aligned). */
+  .cm-vs-row {
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    align-items: center; gap: 18px;
+  }
+  .cm-vs-side {
+    display: flex; flex-direction: column; gap: 4px;
+    min-width: 0;
+  }
+  .cm-vs-side.cm-other { text-align: right; }
+  .cm-vs-symbol {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: 32px; line-height: 1; color: var(--ink); margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .cm-vs-name {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 0;
+  }
+  .cm-vs-price {
+    font-family: var(--font-mono); font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink); margin: 4px 0 0;
+  }
+  .cm-vs-perf {
+    font-family: var(--font-mono); font-size: 11px;
+    font-variant-numeric: tabular-nums; letter-spacing: 0.06em;
+    color: var(--ink-mid); margin: 0;
+  }
+  .cm-vs-divider {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: 16px; color: var(--ink-pale);
+    letter-spacing: 0.04em;
+  }
+
+  /* Metric callout — top + bottom hairline only. Reads as a horizontal
+     dividing rule between sections, not a boxed callout. */
+  .cm-metric {
+    display: grid; grid-template-columns: auto 1fr auto;
+    gap: 18px; align-items: baseline;
+    padding: 12px 0;
+    border-top: 1px solid var(--ink-faint);
+    border-bottom: 1px solid var(--ink-faint);
+  }
+  .cm-metric-label {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-mid);
+  }
+  .cm-metric-value {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: 22px; color: var(--ink); line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .cm-metric-trend {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-pale); font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  /* Editorial title — italic Sentient, 24px. Carries the .headline
+     class so the .is-hoverable :hover .headline rule colors it red. */
+  .cm-title {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: 24px; line-height: 1.25; color: var(--ink);
+    margin: 0; letter-spacing: -0.01em;
+    max-width: 72ch;
+  }
+
+  /* Body prose — Satoshi 14px, 1.65 line-height, max 72ch (per spec). */
+  .cm-body {
+    font-family: var(--font-body); font-size: 14px; line-height: 1.65;
+    color: var(--ink); max-width: 72ch; margin: 0;
+  }
+  .cm-body p { margin: 0 0 10px; }
+  .cm-body p:last-child { margin-bottom: 0; }
+
+  /* Foot row — byline left, dark CTA right. Top hairline. */
+  .cm-foot {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 14px; flex-wrap: wrap;
+    padding-top: 14px;
+    border-top: 1px solid var(--ink-faint);
+  }
+  .cm-byline {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-pale); margin: 0;
+  }
+
+  /* Dark CTA. is-pressable: paper-coal bg, paper text, deboss inset
+     shadow on hover, 1px translateY on :active. Same vocabulary as
+     the AgentCard CTA. */
+  .cm-cta.is-pressable {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 12px 20px;
+    background: var(--paper-coal); color: var(--paper);
+    border-radius: 2px;
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.28em; text-transform: uppercase;
+    text-decoration: none; cursor: pointer;
+    box-shadow:
+      inset 0 1px 0 rgba(255,251,240,0.10),
+      0 2px 6px rgba(40,30,18,0.10),
+      0 8px 18px rgba(40,30,18,0.06);
+    transition: box-shadow 180ms var(--ease-out),
+                transform 180ms var(--ease-out);
+  }
+  .cm-cta.is-pressable:hover {
+    box-shadow:
+      inset 0 2px 6px rgba(0,0,0,0.30),
+      inset 0 -1px 0 rgba(255,251,240,0.08);
+  }
+  .cm-cta.is-pressable:active { transform: translateY(1px); }
+  .cm-cta .arrow { font-family: var(--font-mono); font-size: 12px; }
+  @media (prefers-reduced-motion: reduce) {
+    .cm-cta.is-pressable { transition: none; }
+    .cm-cta.is-pressable:active { transform: none; }
+  }
+
+  /* Mobile: drop the cm-metric to a single column (label / value /
+     trend stack), shrink hero symbol + title. Vs hero stays 3-col
+     so the "vs" divider keeps its meaning. */
+  @media (max-width: 700px) {
+    .comparison-card { padding: 18px 18px 20px; gap: 16px; }
+    .cm-vs-symbol { font-size: 26px; }
+    .cm-vs-row { gap: 12px; }
+    .cm-title { font-size: 19px; }
+    .cm-metric { grid-template-columns: 1fr; gap: 4px; }
+    .cm-metric-trend { text-align: left; }
+    .cm-metric-value { font-size: 18px; }
+    .cm-foot { gap: 8px; }
+  }
+</style>
