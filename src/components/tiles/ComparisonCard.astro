@@ -32,9 +32,9 @@ function fmtPrice(n: number): string {
 function glyphOf(dir: Direction): string {
   return dir === 'up' ? '↑' : dir === 'down' ? '↓' : '→';
 }
-function fmtPerf(pct: number, dir: Direction): string {
+function fmtPctText(pct: number): string {
   const sign = pct > 0 ? '+' : '';
-  return `${glyphOf(dir)} ${sign}${pct.toFixed(2)}% / 24h`;
+  return `${sign}${pct.toFixed(2)}% / 24h`;
 }
 
 function fmtRefreshed(iso: string): string {
@@ -63,14 +63,22 @@ const c = comparison;
       <p class="cm-vs-symbol">{selfSymbol}</p>
       <p class="cm-vs-name">{selfName}</p>
       <p class="cm-vs-price">{fmtPrice(selfPrice)}</p>
-      <p class="cm-vs-perf">{fmtPerf(c.selfPerfPct, c.selfPerfDir)}</p>
+      <p class="cm-vs-perf">
+        {/* Glyph is aria-hidden — the signed pct that follows
+            encodes direction in the accessible name. */}
+        <span aria-hidden="true">{glyphOf(c.selfPerfDir)} </span>
+        {fmtPctText(c.selfPerfPct)}
+      </p>
     </div>
     <div class="cm-vs-divider" aria-hidden="true">vs</div>
     <div class="cm-vs-side cm-other">
       <p class="cm-vs-symbol">{c.vsSymbol}</p>
       <p class="cm-vs-name">{c.vsName}</p>
       <p class="cm-vs-price">{c.vsPrice}</p>
-      <p class="cm-vs-perf">{fmtPerf(c.vsPerfPct, c.vsPerfDir)}</p>
+      <p class="cm-vs-perf">
+        <span aria-hidden="true">{glyphOf(c.vsPerfDir)} </span>
+        {fmtPctText(c.vsPerfPct)}
+      </p>
     </div>
   </div>
 

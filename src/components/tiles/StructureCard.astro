@@ -32,7 +32,9 @@ const cells: Array<{ lab: string; cell: StructureCell }> = [
       <div class="cell">
         <p class="lab">{lab}</p>
         <p class="bias-line">
-          <span class="glyph">{dirGlyph(cell.dir)}</span>
+          {/* Glyph is aria-hidden — the sentiment word carries
+              direction in the accessible name. */}
+          <span class="glyph" aria-hidden="true">{dirGlyph(cell.dir)}</span>
           <span class="word">{cell.sentiment}</span>
         </p>
         <p class="horizon">{cell.horizon}</p>

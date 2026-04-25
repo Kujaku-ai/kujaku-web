@@ -59,7 +59,9 @@ const biasCells: Array<{ lab: string; cell: StructureCell }> = [
       <div class="perf-cell">
         <p class="lab">{lab}</p>
         <p class="num">
-          <span class="glyph">{dirGlyph(cell.dir)}</span>
+          {/* Glyph is aria-hidden — the signed pct that follows
+              encodes direction in the accessible name. */}
+          <span class="glyph" aria-hidden="true">{dirGlyph(cell.dir)}</span>
           {fmtPct(cell.pct)}
         </p>
         <p class="meta">{fmtAbs(cell.abs)}</p>
@@ -75,7 +77,9 @@ const biasCells: Array<{ lab: string; cell: StructureCell }> = [
       <div class="bias-cell">
         <p class="lab">{lab}</p>
         <p class="bias-line">
-          <span class="glyph">{dirGlyph(cell.dir)}</span>
+          {/* Glyph is aria-hidden — the sentiment word
+              ("BEARISH"/"BULLISH"/etc) carries the direction. */}
+          <span class="glyph" aria-hidden="true">{dirGlyph(cell.dir)}</span>
           <span class="word">{cell.sentiment}</span>
         </p>
         <p class="horizon">{cell.horizon}</p>
