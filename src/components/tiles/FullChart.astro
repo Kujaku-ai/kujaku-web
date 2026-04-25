@@ -103,7 +103,8 @@ const payload = JSON.stringify({ line: lineByTf, candle: barsByTf });
   .full-chart-tile {
     background: var(--paper);
     border-radius: 4px;
-    padding: 18px 22px 16px;
+    /* Compact-tile canonical padding (18 20 14). */
+    padding: 18px 20px 14px;
     box-shadow:
       inset 0 1px 0 rgba(255,251,240,0.7),
       0 1px 0 rgba(255,251,240,0.5),
@@ -234,7 +235,7 @@ const payload = JSON.stringify({ line: lineByTf, candle: barsByTf });
   .overlay-group button.is-active .dot { background: var(--gold); }
 
   @media (max-width: 700px) {
-    .full-chart-tile { padding: 16px 16px 14px; }
+    .full-chart-tile { padding: 16px 18px; }
     .chart-container { min-height: 380px; }
     .lwc-attribution { display: none; }
     .chart-controls { gap: 12px; }

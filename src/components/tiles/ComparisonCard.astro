@@ -112,7 +112,8 @@ const c = comparison;
   .comparison-card {
     background: var(--paper);
     border-radius: 4px;
-    padding: 22px 26px 24px;
+    /* Editorial-card canonical padding (22 28 24). */
+    padding: 22px 28px 24px;
     box-shadow:
       inset 0 1px 0 rgba(255,251,240,0.7),
       0 1px 0 rgba(255,251,240,0.5),
@@ -280,7 +281,7 @@ const c = comparison;
      trend stack), shrink hero symbol + title. Vs hero stays 3-col
      so the "vs" divider keeps its meaning. */
   @media (max-width: 700px) {
-    .comparison-card { padding: 18px 18px 20px; gap: 16px; }
+    .comparison-card { padding: 20px 22px; gap: 16px; }
     .cm-vs-symbol { font-size: 26px; }
     .cm-vs-row { gap: 12px; }
     .cm-title { font-size: 19px; }
