@@ -1,48 +1,96 @@
 ---
+// Comparisons tab — page header + stack of ComparisonCards + closing
+// ComparisonSlot.
+//
+// Slot ALWAYS renders at the end, even when comparisons.length > 0
+// (matches v02 behavior — encourages adding more). When the list is
+// empty, an extra mono empty-state line precedes the slot.
+//
+// All four tickers carry ≥1 comparison in the current mock, so the
+// empty-state branch isn't exercised at runtime; it's still in
+// place for the live-data scenario in Phase 8+ where a freshly
+// added ticker may have no comparisons yet.
+
 import type { AssetData } from '~/lib/types/asset';
+import ComparisonCard from '~/components/tiles/ComparisonCard.astro';
+import ComparisonSlot from '~/components/tiles/ComparisonSlot.astro';
 
 export interface Props { data: AssetData }
 const { data } = Astro.props;
+
+const comps = data.comparisons;
+const metaLine = comps.length > 0
+  ? `比較 · ${comps.length} active · agentic reports refresh daily`
+  : `比較 · build your own — agentic reports refresh daily`;
 ---
 
-<section class="phase1-stub">
-  <p class="eyebrow">phase 6 · comparison <span class="jp">比較</span></p>
-  <h2 class="title">Comparisons — {data.fullName}</h2>
-  <p class="body">
-    Stack of editorial comparison cards (vs hero row, key-metric callout,
-    italic title, agentic synthesis prose, dark CTA) plus a sunken
-    build-your-own slot. {data.comparisons.length} active comparison{data.comparisons.length === 1 ? '' : 's'} · agentic reports refresh daily.
-  </p>
+<section class="comparisons-page">
+  <header class="page-head">
+    <h2 class="page-title">Comparisons · {data.fullName}</h2>
+    <p class="page-meta">{metaLine}</p>
+  </header>
+
+  <div class="cm-stack">
+    {comps.length === 0 && (
+      <p class="cm-empty">
+        no comparisons yet for {data.symbol} · build your first below
+      </p>
+    )}
+
+    {comps.map((c) => (
+      <ComparisonCard
+        comparison={c}
+        selfSymbol={data.symbol}
+        selfName={data.fullName}
+        selfPrice={data.currentPrice}
+      />
+    ))}
+
+    <ComparisonSlot fullName={data.fullName} />
+  </div>
 </section>
 
 <style>
-  .phase1-stub {
-    padding: 36px 32px 40px;
-    background: var(--paper);
-    border-radius: 4px;
-    box-shadow:
-      inset 0 1px 0 rgba(255,251,240,0.7),
-      0 1px 0 rgba(255,251,240,0.5),
-      0 4px 12px rgba(40,30,18,0.05);
+  .comparisons-page {
+    display: flex; flex-direction: column;
+    gap: 22px;
   }
-  .eyebrow {
-    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
-    letter-spacing: 0.22em; text-transform: uppercase;
-    color: var(--red); margin: 0 0 14px;
-    display: inline-flex; align-items: baseline; gap: 10px;
+
+  .page-head {
+    display: flex; flex-wrap: wrap; align-items: baseline;
+    justify-content: space-between; gap: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--ink-faint);
   }
-  .eyebrow .jp {
-    font-family: var(--font-jp); font-size: 13px;
-    letter-spacing: 0.04em; text-transform: none;
-    color: var(--red); font-weight: 400;
-  }
-  .title {
+  .page-title {
     font-family: var(--font-display); font-style: italic; font-weight: 400;
     font-size: 28px; line-height: 1.1; letter-spacing: -0.01em;
-    color: var(--ink); margin: 0 0 14px;
+    color: var(--ink); margin: 0;
   }
-  .body {
-    font-family: var(--font-body); font-size: 14px; line-height: 1.6;
-    color: var(--ink-mid); margin: 0; max-width: 64ch;
+  /* The meta line embeds 比較 (hikaku) as raw text — the brand JP
+     font kicks in on the kanji glyph naturally; no need for a span. */
+  .page-meta {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-mid); margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cm-stack {
+    display: flex; flex-direction: column;
+    gap: 18px;
+  }
+
+  .cm-empty {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-pale); margin: 0;
+    padding: 32px 0; text-align: center;
+  }
+
+  @media (max-width: 700px) {
+    .comparisons-page { gap: 18px; }
+    .page-title { font-size: 22px; }
+    .cm-stack { gap: 14px; }
   }
 </style>
